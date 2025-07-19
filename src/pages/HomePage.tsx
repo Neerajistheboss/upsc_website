@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="container mx-auto py-8 px-4">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Welcome to UPSC 2025</h1>
@@ -76,6 +76,15 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div className="w-full max-w-md mt-8">
+        <Link to="/students" className="block bg-card border rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow text-center cursor-pointer">
+          <div className="flex flex-col items-center gap-2">
+            <svg className="w-10 h-10 text-primary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5a4 4 0 11-8 0 4 4 0 018 0zm6 8v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a6 6 0 0112 0v2a2 2 0 002 2h6a2 2 0 002-2v-2a6 6 0 00-12 0v2a2 2 0 002 2h6a2 2 0 002-2v-2z" /></svg>
+            <span className="text-lg font-semibold">Other Students</span>
+            <span className="text-muted-foreground text-sm">See profiles of other public UPSC aspirants</span>
+          </div>
+        </Link>
       </div>
     </div>
   )

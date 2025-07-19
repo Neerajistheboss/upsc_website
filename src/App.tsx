@@ -14,6 +14,7 @@ import BookmarksPage from '@/pages/BookmarksPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import ProfilePage from '@/pages/ProfilePage'
+import StudentsPage from '@/pages/StudentsPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 
@@ -37,6 +38,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/students" element={<StudentsPage />} />
           </Routes>
           <Toaster />
         </div>
