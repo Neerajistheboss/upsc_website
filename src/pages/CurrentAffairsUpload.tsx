@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import { extractDataFromUrl } from '@/lib/urlExtractor'
 
 interface CurrentAffairsItem {
   id?: number
@@ -17,11 +18,20 @@ interface CurrentAffairsItem {
   updated_at?: string
 }
 
+interface ExtractedData {
+  title?: string
+  summary?: string
+  source?: string
+  date?: string
+  tags?: string[]
+}
+
 const CurrentAffairsUpload = () => {
   const [currentAffairsData, setCurrentAffairsData] = useState<CurrentAffairsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [extracting, setExtracting] = useState(false)
   const toast = useToast()
   const [formData, setFormData] = useState({
     title: '',
@@ -53,6 +63,47 @@ const CurrentAffairsUpload = () => {
   ]
 
   const importanceLevels = ['High', 'Medium', 'Low']
+
+  // Extract data from URL
+  const handleExtractDataFromUrl = async (url: string): Promise<ExtractedData> => {
+    try {
+      setExtracting(true)
+      const data = await extractDataFromUrl(url)
+      return data
+    } catch (error) {
+      console.error('Error extracting data from URL:', error)
+      throw error
+    } finally {
+      setExtracting(false)
+    }
+  }
+
+  // Handle URL extraction
+  const handleExtractFromUrl = async () => {
+    if (!formData.source_url) {
+      toast.error('Please enter a source URL first')
+      return
+    }
+
+    try {
+      const extractedData = await handleExtractDataFromUrl(formData.source_url)
+      
+      // Update form with extracted data
+      setFormData(prev => ({
+        ...prev,
+        title: extractedData.title || prev.title,
+        summary: extractedData.summary || prev.summary,
+        source: extractedData.source || prev.source,
+        date: extractedData.date || prev.date,
+        tags: extractedData.tags ? extractedData.tags.join(', ') : prev.tags
+      }))
+
+      toast.success('Data extracted successfully from URL!')
+    } catch (error) {
+      console.error('Error extracting data:', error)
+      toast.error('Failed to extract data from URL', 'Please check the URL and try again')
+    }
+  }
 
   // Fetch all current affairs data
   const fetchCurrentAffairs = async () => {
@@ -383,14 +434,34 @@ const CurrentAffairsUpload = () => {
                 <label htmlFor="source_url" className="block text-sm font-medium mb-2">
                   Source URL
                 </label>
-                <input
-                  id="source_url"
-                  type="url"
-                  value={formData.source_url}
-                  onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="https://example.com/article"
-                />
+                <div className="flex space-x-2">
+                  <input
+                    id="source_url"
+                    type="url"
+                    value={formData.source_url}
+                    onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="https://example.com/article"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleExtractFromUrl}
+                    disabled={extracting || !formData.source_url}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {extracting ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Extracting...</span>
+                      </div>
+                    ) : (
+                      'Extract'
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click "Extract" to automatically fill form fields from the URL
+                </p>
               </div>
             </div>
 
