@@ -10,6 +10,101 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import { useTheme } from 'next-themes'
+
+const THEME_OPTIONS = [
+  { value: 'light', label: 'Light', icon: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.07l-.71.71M21 12h-1M4 12H3m16.66 5.66l-.71-.71M4.05 4.93l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+  ) },
+  { value: 'dark', label: 'Dark', icon: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" /></svg>
+  ) },
+  { value: 'blue', label: 'Blue', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-blue-200 border border-blue-400" />
+  ) },
+  { value: 'green', label: 'Green', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-green-200 border border-green-400" />
+  ) },
+  { value: 'pink', label: 'Pink', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-pink-200 border border-pink-400" />
+  ) },
+  { value: 'lavender', label: 'Lavender', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-purple-200 border border-purple-400" />
+  ) },
+  { value: 'mint', label: 'Mint', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-teal-100 border border-teal-300" />
+  ) },
+  { value: 'peach', label: 'Peach', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-orange-100 border border-orange-300" />
+  ) },
+  { value: 'sky', label: 'Sky', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-sky-100 border border-sky-300" />
+  ) },
+  { value: 'lemon', label: 'Lemon', icon: (
+    <span className="inline-block w-5 h-5 rounded-full bg-yellow-100 border border-yellow-300" />
+  ) },
+]
+
+const ThemeDropdown = () => {
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const [open, setOpen] = useState(false)
+  // Determine current theme (custom or next-themes)
+  let current = THEME_OPTIONS.find(opt => opt.value === theme) || THEME_OPTIONS[0]
+  if ((theme === 'system' || theme === 'light' || theme === 'dark') && !['blue','green','pink'].includes(theme)) {
+    current = THEME_OPTIONS.find(opt => opt.value === resolvedTheme) || THEME_OPTIONS[0]
+  }
+
+  // Set html class for custom themes
+  React.useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    html.classList.remove('theme-blue', 'theme-green', 'theme-pink', 'theme-lavender', 'theme-mint', 'theme-peach', 'theme-sky', 'theme-lemon')
+    body.classList.remove('theme-blue', 'theme-green', 'theme-pink', 'theme-lavender', 'theme-mint', 'theme-peach', 'theme-sky', 'theme-lemon')
+    if (typeof theme === 'string' && [
+      'blue', 'green', 'pink', 'lavender', 'mint', 'peach', 'sky', 'lemon'
+    ].includes(theme)) {
+      html.classList.add(`theme-${theme}`)
+      body.classList.add(`theme-${theme}`)
+    }
+  }, [theme])
+
+  const handleSelect = (value: string) => {
+    setOpen(false)
+    if (value === 'light' || value === 'dark') {
+      setTheme(value)
+    } else {
+      setTheme(value)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        className="flex items-center gap-2 p-2 rounded-full hover:bg-accent transition-colors"
+        onClick={() => setOpen(v => !v)}
+        title="Change theme"
+      >
+        {current.icon}
+        <span className="hidden md:inline text-sm">{current.label}</span>
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-40 bg-background border rounded shadow-lg z-50">
+          {THEME_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              className={`flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-accent ${current.value === opt.value ? 'font-bold' : ''}`}
+              onClick={() => handleSelect(opt.value)}
+            >
+              {opt.icon}
+              <span>{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -102,6 +197,9 @@ const Navbar = () => {
                           </Link>
                         </DrawerClose>
                       ))}
+                      <div className="pt-4 border-t">
+                        <ThemeDropdown />
+                      </div>
                       
                       {/* External Links Section */}
                       <div className="pt-4 border-t">
@@ -186,6 +284,7 @@ const Navbar = () => {
 
           {/* Right side - Login/Profile */}
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeDropdown />
             <button className="text-sm font-medium transition-colors hover:text-primary">
               Login
             </button>

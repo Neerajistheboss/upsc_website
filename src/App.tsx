@@ -12,27 +12,30 @@ import SpeciesInNewsPage from '@/pages/SpeciesInNewsPage'
 import SpeciesManagementPage from '@/pages/SpeciesManagementPage'
 import BookmarksPage from '@/pages/BookmarksPage'
 import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from '@/components/ui/theme-provider'
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/pyq" element={<PYQPage />} />
-          <Route path="/question-paper/:year/:paper" element={<QuestionPaperViewer />} />
-          <Route path="/answer-key/:year/:paper" element={<AnswerKeyViewer />} />
-          <Route path="/admin/pdf-urls" element={<PDFUrlManager />} />
-          <Route path="/current-affairs" element={<CurrentAffairsPage />} />
-          <Route path="/species-in-news" element={<SpeciesInNewsPage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
-          <Route path="/admin/species" element={<SpeciesManagementPage />} />
-        </Routes>
-        <Toaster />
-      </div>
-    </Router>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <Router>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/pyq" element={<PYQPage />} />
+            <Route path="/question-paper/:year/:paper" element={<QuestionPaperViewer />} />
+            <Route path="/answer-key/:year/:paper" element={<AnswerKeyViewer />} />
+            <Route path="/admin/pdf-urls" element={<PDFUrlManager />} />
+            <Route path="/current-affairs" element={<CurrentAffairsPage />} />
+            <Route path="/species-in-news" element={<SpeciesInNewsPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
+            <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
+            <Route path="/admin/species" element={<SpeciesManagementPage />} />
+          </Routes>
+          <Toaster />
+        </div>
+      </Router>
+    </ThemeProvider>
   )
 }
 
