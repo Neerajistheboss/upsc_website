@@ -11,6 +11,8 @@ import CurrentAffairsUpload from '@/pages/CurrentAffairsUpload'
 import SpeciesInNewsPage from '@/pages/SpeciesInNewsPage'
 import SpeciesManagementPage from '@/pages/SpeciesManagementPage'
 import BookmarksPage from '@/pages/BookmarksPage'
+import LoginPage from '@/pages/LoginPage'
+import RegisterPage from '@/pages/RegisterPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 
@@ -31,6 +33,8 @@ function App() {
             <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
             <Route path="/admin/species" element={<SpeciesManagementPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Routes>
           <Toaster />
         </div>

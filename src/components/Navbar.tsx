@@ -11,6 +11,8 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useTheme } from 'next-themes'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/useToast'
 
 const THEME_OPTIONS = [
   { value: 'light', label: 'Light', icon: (
@@ -106,8 +108,75 @@ const ThemeDropdown = () => {
   )
 }
 
+const AuthModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const toast = useToast()
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      if (mode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        toast.success('Logged in successfully!')
+        onClose()
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+        toast.success('Signup successful! Please check your email to verify.')
+        setMode('login')
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Authentication failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return open ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-sm relative">
+        <button className="absolute top-2 right-2 text-xl" onClick={onClose}>&times;</button>
+        <h2 className="text-xl font-bold mb-4 text-center">{mode === 'login' ? 'Login' : 'Sign Up'}</h2>
+        <form onSubmit={handleAuth} className="space-y-4">
+          <div>
+            <label className="block text-sm mb-1">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" />
+          </div>
+          <button type="submit" className="w-full bg-primary text-primary-foreground py-2 rounded-md font-medium hover:bg-primary/90 transition-colors" disabled={loading}>
+            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Sign Up'}
+          </button>
+        </form>
+        <div className="mt-4 text-center text-sm">
+          {mode === 'login' ? (
+            <>
+              Don&apos;t have an account?{' '}
+              <button className="text-primary underline" onClick={() => setMode('signup')}>Sign Up</button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button className="text-primary underline" onClick={() => setMode('login')}>Login</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null
+}
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
   const navigationItems = [
     // { href: "/", label: "Home" },
@@ -147,8 +216,18 @@ const Navbar = () => {
     }
   ]
 
+  React.useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+    })
+    // Get current user on mount
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null))
+    return () => { listener?.subscription.unsubscribe() }
+  }, [])
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left side - Mobile menu button */}
@@ -199,6 +278,21 @@ const Navbar = () => {
                       ))}
                       <div className="pt-4 border-t">
                         <ThemeDropdown />
+                        {user ? (
+                          <>
+                            <span className="block text-sm font-medium text-foreground mt-4">{user.email}</span>
+                            <button className="w-full text-left text-sm font-medium transition-colors hover:text-primary py-2" onClick={async () => { await supabase.auth.signOut(); setUser(null); }}>Logout</button>
+                          </>
+                        ) : (
+                          <>
+                            <Link to="/login" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
+                              Login
+                            </Link>
+                            <Link to="/register" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
+                              Sign Up
+                            </Link>
+                          </>
+                        )}
                       </div>
                       
                       {/* External Links Section */}
@@ -285,12 +379,21 @@ const Navbar = () => {
           {/* Right side - Login/Profile */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeDropdown />
-            <button className="text-sm font-medium transition-colors hover:text-primary">
-              Login
-            </button>
-            <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors">
-              Sign Up
-            </button>
+            {user ? (
+              <>
+                <span className="text-sm font-medium text-foreground">{user.email}</span>
+                <button className="text-sm font-medium transition-colors hover:text-primary" onClick={async () => { await supabase.auth.signOut(); setUser(null); }}>Logout</button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-medium transition-colors hover:text-primary">
+                  Login
+                </Link>
+                <Link to="/register" className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
