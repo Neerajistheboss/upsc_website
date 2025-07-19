@@ -8,6 +8,8 @@ import AnswerKeyViewer from '@/pages/AnswerKeyViewer'
 import PDFUrlManager from '@/pages/PDFUrlManager'
 import CurrentAffairsPage from '@/pages/CurrentAffairsPage'
 import CurrentAffairsUpload from '@/pages/CurrentAffairsUpload'
+import SpeciesInNewsPage from '@/pages/SpeciesInNewsPage'
+import SpeciesManagementPage from '@/pages/SpeciesManagementPage'
 import BookmarksPage from '@/pages/BookmarksPage'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -23,8 +25,10 @@ function App() {
           <Route path="/answer-key/:year/:paper" element={<AnswerKeyViewer />} />
           <Route path="/admin/pdf-urls" element={<PDFUrlManager />} />
           <Route path="/current-affairs" element={<CurrentAffairsPage />} />
+          <Route path="/species-in-news" element={<SpeciesInNewsPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
+          <Route path="/admin/species" element={<SpeciesManagementPage />} />
         </Routes>
         <Toaster />
       </div>

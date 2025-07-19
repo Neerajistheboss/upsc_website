@@ -22,6 +22,7 @@ const Navbar = () => {
     // { href: "#about", label: "About" },
     { href: "/pyq", label: "Previous Year Question Papers" },
     { href: "/current-affairs", label: "Current Affairs" },
+    { href: "/species-in-news", label: "Species in News" },
     { href: "/bookmarks", label: "My Bookmarks", icon: "bookmark" },
   ]
 
@@ -42,6 +43,11 @@ const Navbar = () => {
     {
       href: "/admin/current-affairs",
       label: "Manage Current Affairs",
+      isInternal: true
+    },
+    {
+      href: "/admin/species",
+      label: "Manage Species",
       isInternal: true
     }
   ]

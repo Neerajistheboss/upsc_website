@@ -9,6 +9,7 @@ const CurrentAffairsPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedImportance, setSelectedImportance] = useState('')
+  const [showBookmarked, setShowBookmarked] = useState(false)
   const toast = useToast()
 
   const categories = [
@@ -32,25 +33,23 @@ const CurrentAffairsPage = () => {
 
   const importanceLevels = ['All', 'High', 'Medium', 'Low']
 
-  // Filter current affairs based on search, category, and importance
+  // Filter current affairs based on search, category, importance, and bookmark toggle
   const filteredAffairs = useMemo(() => {
     return currentAffairsData.filter((item) => {
+      if (showBookmarked && !item.bookmarked) return false
       const matchesSearch = searchTerm === '' || 
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      
       const matchesCategory = selectedCategory === '' || 
         selectedCategory === 'All Categories' || 
         item.category === selectedCategory
-      
       const matchesImportance = selectedImportance === '' || 
         selectedImportance === 'All' || 
         item.importance === selectedImportance
-      
       return matchesSearch && matchesCategory && matchesImportance
     })
-  }, [currentAffairsData, searchTerm, selectedCategory, selectedImportance])
+  }, [currentAffairsData, searchTerm, selectedCategory, selectedImportance, showBookmarked])
 
   const getImportanceColor = (importance: string) => {
     switch (importance) {
@@ -64,8 +63,6 @@ const CurrentAffairsPage = () => {
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
-
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -118,23 +115,23 @@ const CurrentAffairsPage = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-4">Current Affairs</h1>
-              <p className="text-lg text-muted-foreground">
-                Stay updated with the latest current affairs relevant for UPSC Civil Services Examination 2025.
-              </p>
-            </div>
-            <Link
-              to="/bookmarks"
-              className="flex items-center space-x-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span>My Bookmarks</span>
-            </Link>
+        <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-4">Current Affairs</h1>
+            <p className="text-lg text-muted-foreground">
+              Stay updated with the latest current affairs relevant for UPSC Civil Services Examination 2025.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showBookmarked}
+                onChange={() => setShowBookmarked(v => !v)}
+                className="form-checkbox h-5 w-5 text-primary rounded"
+              />
+              <span className="ml-2 text-sm">Show Bookmarked Only</span>
+            </label>
           </div>
         </div>
 
@@ -251,15 +248,16 @@ const CurrentAffairsPage = () => {
                         Read More
                       </a>
                     ) :null}
-                    <button 
-                      onClick={() => handleSave(affair)} 
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                        affair.bookmarked 
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                          : 'border border-input bg-background hover:bg-accent'
-                      }`}
+                    <button
+                      onClick={() => handleSave(affair)}
+                      className={`p-2 rounded-full border border-input bg-background hover:bg-accent transition-colors ${affair.bookmarked ? 'text-yellow-500' : 'text-gray-400'}`}
+                      title={affair.bookmarked ? 'Remove Bookmark' : 'Bookmark'}
                     >
-                      {affair.bookmarked ? 'Saved' : 'Save'}
+                      {affair.bookmarked ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5Z" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5Z" /></svg>
+                      )}
                     </button>
                   </div>
                 </div>
