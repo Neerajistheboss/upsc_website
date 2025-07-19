@@ -67,3 +67,12 @@ export default tseslint.config([
   },
 ])
 ```
+
+## PWA (Progressive Web App) Support
+
+This app is a PWA. You can install it on your device:
+
+- On desktop: Click the install icon in your browser address bar (if available).
+- On mobile: Use the browser menu to "Add to Home Screen".
+
+The app works offline for previously visited pages and static assets.

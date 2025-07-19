@@ -189,7 +189,7 @@ const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-accent text-primary font-bold text-lg border border-input hover:bg-primary/10 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-full  text-primary font-bold text-lg border border-input hover:bg-primary/10 transition-colors"
           title={displayName}
         >
           {initials || (
@@ -389,12 +389,14 @@ const Navbar = () => {
             </Drawer>
 
             {/* Logo/Brand */}
+            <Link to="/">
             <div className="flex items-center space-x-2">
               <div className="h-8 rounded-lg bg-primary text-white  flex items-center justify-center px-2">
               UPSC
            
               </div>
             </div>
+            </Link>
           </div>
 
           {/* Navigation Links - Desktop */}
