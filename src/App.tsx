@@ -1,0 +1,35 @@
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Navbar from '@/components/Navbar'
+import HomePage from '@/pages/HomePage'
+import PYQPage from '@/pages/PYQPage'
+import QuestionPaperViewer from '@/pages/QuestionPaperViewer'
+import AnswerKeyViewer from '@/pages/AnswerKeyViewer'
+import PDFUrlManager from '@/pages/PDFUrlManager'
+import CurrentAffairsPage from '@/pages/CurrentAffairsPage'
+import CurrentAffairsUpload from '@/pages/CurrentAffairsUpload'
+import BookmarksPage from '@/pages/BookmarksPage'
+import { Toaster } from '@/components/ui/sonner'
+
+function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/pyq" element={<PYQPage />} />
+          <Route path="/question-paper/:year/:paper" element={<QuestionPaperViewer />} />
+          <Route path="/answer-key/:year/:paper" element={<AnswerKeyViewer />} />
+          <Route path="/admin/pdf-urls" element={<PDFUrlManager />} />
+          <Route path="/current-affairs" element={<CurrentAffairsPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
+        </Routes>
+        <Toaster />
+      </div>
+    </Router>
+  )
+}
+
+export default App
