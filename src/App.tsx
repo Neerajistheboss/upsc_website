@@ -17,6 +17,7 @@ import ProfilePage from '@/pages/ProfilePage'
 import StudentsPage from '@/pages/StudentsPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
+import PWAInstallButton from '@/components/PWAInstallButton'
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route path="/students" element={<StudentsPage />} />
           </Routes>
           <Toaster />
+          <PWAInstallButton />
         </div>
       </Router>
     </ThemeProvider>

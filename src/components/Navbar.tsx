@@ -200,7 +200,7 @@ const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
       <DropdownMenuContent align="end" className="w-40">
         <div className="px-4 py-2 text-sm text-muted-foreground border-b">{displayName}</div>
         <DropdownMenuItem asChild>
-          <a href="/profile">Profile</a>
+          <Link to="/profile">Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onLogout}>Logout</DropdownMenuItem>
       </DropdownMenuContent>
