@@ -76,3 +76,31 @@ This app is a PWA. You can install it on your device:
 - On mobile: Use the browser menu to "Add to Home Screen".
 
 The app works offline for previously visited pages and static assets.
+
+## Visitor Counter Setup
+
+To enable the visitor counter, run this SQL in your Supabase SQL Editor:
+
+```sql
+CREATE TABLE visitor_stats (
+  id SERIAL PRIMARY KEY,
+  visit_count BIGINT NOT NULL DEFAULT 0,
+  last_visited TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+INSERT INTO visitor_stats (visit_count) VALUES (0);
+ALTER TABLE visitor_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON visitor_stats FOR ALL USING (true);
+
+-- Create a function for atomic increment
+CREATE OR REPLACE FUNCTION increment_visitor_count()
+RETURNS bigint AS $$
+DECLARE
+  new_count bigint;
+BEGIN
+  UPDATE visitor_stats SET visit_count = visit_count + 1, last_visited = NOW() WHERE id = 1 RETURNING visit_count INTO new_count;
+  RETURN new_count;
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+```
+
+This will allow the homepage to increment and display the total visitor count.

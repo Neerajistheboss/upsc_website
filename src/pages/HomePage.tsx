@@ -1,9 +1,30 @@
 import { Badge } from '@/components/ui/badge'
 import { Handshake } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
 
 const HomePage = () => {
+  const [visitorCount, setVisitorCount] = useState<number | null>(null)
+  const [loadingVisitor, setLoadingVisitor] = useState(true)
+
+  useEffect(() => {
+    const incrementVisitor = async () => {
+      setLoadingVisitor(true)
+      // Atomically increment the counter and get the new value
+      const { data, error } = await supabase.rpc('increment_visitor_count')
+      if (!error && data && typeof data === 'number') {
+        setVisitorCount(data)
+      } else {
+        // fallback: fetch the count directly
+        const { data: row } = await supabase.from('visitor_stats').select('visit_count').eq('id', 1).single()
+        setVisitorCount(row?.visit_count || 0)
+      }
+      setLoadingVisitor(false)
+    }
+    incrementVisitor()
+  }, [])
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="container mx-auto py-8 px-4">
@@ -27,7 +48,10 @@ const HomePage = () => {
         {/* Latest Updates */}
         </div>
       </div>
-      
+      {/* Visitor Counter */}
+      <div className="mt-8 text-center text-muted-foreground text-sm">
+        {loadingVisitor ? 'Loading visitors...' : `Total Visitors: ${visitorCount ?? 'N/A'}`}
+      </div>
     </div>
   )
 }
@@ -69,7 +93,7 @@ const PracticeTests = <div className="bg-card border rounded-lg p-6 text-center 
 
 const Community = (
   <Link to="/students">
-    <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer w-80 relative">
+    <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer min-w-80 relative">
       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
         <Handshake className="w-6 h-6 text-primary" />
       </div>
