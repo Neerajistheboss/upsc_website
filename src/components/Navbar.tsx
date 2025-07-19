@@ -173,6 +173,40 @@ const AuthModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =>
   ) : null
 }
 
+function getInitials(nameOrEmail: string) {
+  if (!nameOrEmail) return ''
+  const parts = nameOrEmail.split(' ')
+  if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (nameOrEmail.includes('@')) return nameOrEmail[0].toUpperCase()
+  return nameOrEmail.slice(0, 2).toUpperCase()
+}
+
+const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
+  const [open, setOpen] = useState(false)
+  const displayName = user.user_metadata?.displayName || user.email
+  const initials = getInitials(displayName)
+  return (
+    <div className="relative">
+      <button
+        className="flex items-center justify-center w-9 h-9 rounded-full bg-accent text-primary font-bold text-lg border border-input hover:bg-primary/10 transition-colors"
+        onClick={() => setOpen(v => !v)}
+        title={displayName}
+      >
+        {initials || (
+          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-40 bg-background border rounded shadow-lg z-50">
+          <div className="px-4 py-2 text-sm text-muted-foreground border-b">{displayName}</div>
+          <a href="/profile" className="block px-4 py-2 text-sm hover:bg-accent transition-colors">Profile</a>
+          <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-accent transition-colors">Logout</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
@@ -280,8 +314,7 @@ const Navbar = () => {
                         <ThemeDropdown />
                         {user ? (
                           <>
-                            <span className="block text-sm font-medium text-foreground mt-4">{user.email}</span>
-                            <button className="w-full text-left text-sm font-medium transition-colors hover:text-primary py-2" onClick={async () => { await supabase.auth.signOut(); setUser(null); }}>Logout</button>
+                            <UserMenu user={user} onLogout={async () => { await supabase.auth.signOut(); setUser(null); }} />
                           </>
                         ) : (
                           <>
@@ -381,8 +414,7 @@ const Navbar = () => {
             <ThemeDropdown />
             {user ? (
               <>
-                <span className="text-sm font-medium text-foreground">{user.email}</span>
-                <button className="text-sm font-medium transition-colors hover:text-primary" onClick={async () => { await supabase.auth.signOut(); setUser(null); }}>Logout</button>
+                <UserMenu user={user} onLogout={async () => { await supabase.auth.signOut(); setUser(null); }} />
               </>
             ) : (
               <>
