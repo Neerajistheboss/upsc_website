@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import GoogleLoginButton from '@/components/GoogleLoginButton'
 import { useIsLoggedIn } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
 
 const HomePage = () => {
   const [visitorCount, setVisitorCount] = useState<number | null>(null)
@@ -37,11 +38,11 @@ const HomePage = () => {
             Access previous year papers, study materials, and practice tests all in one place.
           </p>
         </div>
-        {!isLoggedIn && (
-          <div className='w-fit mx-auto my-4'>
+        <div className='w-fit mx-auto my-4'>
+        {!isLoggedIn ? (
             <GoogleLoginButton loginText='Login with Google'/>
+          ):<Link to="/profile"><Button>View Account</Button></Link>}
           </div>
-        )}
         
 
         {/* Quick Actions */}

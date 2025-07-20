@@ -15,6 +15,7 @@ import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import AuthCallback from '@/pages/AuthCallback'
 import ProfilePage from '@/pages/ProfilePage'
+import CommunityPage from '@/pages/CommunityPage'
 import StudentsPage from '@/pages/StudentsPage'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
@@ -43,6 +44,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/community" element={<CommunityPage />} />
               <Route path="/students" element={<StudentsPage />} />
             </Routes>
             <Toaster />

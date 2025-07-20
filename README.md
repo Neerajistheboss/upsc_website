@@ -115,6 +115,7 @@ A comprehensive UPSC preparation application with previous year question papers,
 - **Current Affairs**: Stay updated with latest current affairs
 - **Species in News**: Track species mentioned in current affairs
 - **Bookmarks**: Save important content for later reference
+- **Community**: Connect with fellow UPSC aspirants through public profiles
 - **Authentication**: Secure login with email/password and Google OAuth
 - **Responsive Design**: Works on desktop and mobile devices
 - **PWA Support**: Install as a progressive web app
@@ -210,6 +211,25 @@ src/
    - User is redirected to home page on success
 3. **Session Management**: The `AuthContext` manages authentication state across the app
 
+## Public Profiles
+
+All new user profiles are **public by default**, allowing users to:
+
+- **Connect with fellow aspirants**: Find study partners and mentors
+- **Share expertise**: Display your expert subjects and preparation details
+- **Build community**: Contribute to the UPSC aspirant network
+- **Privacy control**: Users can make their profiles private if desired
+
+### Profile Features
+
+- **Display Name**: Custom name for your profile
+- **About Me**: Personal description and goals
+- **Expert Subject**: Your area of expertise
+- **Target Year**: When you plan to take the exam
+- **Preparing Since**: How long you've been preparing
+- **Profile Photo**: Personal avatar
+- **Public/Private Toggle**: Control profile visibility
+
 ## Using the AuthContext
 
 The application uses React Context for centralized authentication state management:
@@ -240,7 +260,7 @@ function MyComponent() {
 ### Available Methods
 
 - **`signIn(email, password)`**: Email/password login
-- **`signUp(email, password, phone?)`**: Email/password registration
+- **`signUp(email, password)`**: Email/password registration
 - **`signOut()`**: Logout user
 - **`signInWithGoogle()`**: Google OAuth login
 

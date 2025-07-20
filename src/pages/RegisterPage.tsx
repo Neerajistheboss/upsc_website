@@ -6,7 +6,6 @@ import GoogleLoginButton from '@/components/GoogleLoginButton'
 
 const schema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  phone: z.string().min(8, { message: 'Phone number is too short' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   confirmPassword: z.string()
 }).superRefine(({ password, confirmPassword }, ctx) => {
@@ -20,7 +19,7 @@ const schema = z.object({
 })
 
 const RegisterPage = () => {
-  const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
@@ -87,7 +86,7 @@ const RegisterPage = () => {
     }
     setLoading(true)
     try {
-      await signUp(form.email, form.password, form.phone)
+      await signUp(form.email, form.password)
       navigate('/login')
     } catch (err: any) {
       // Error handling is already done in the context
@@ -128,11 +127,6 @@ const RegisterPage = () => {
             <label className="block text-sm mb-1">Email</label>
             <input name="email" type="email" value={form.email} onChange={handleChange} required className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" />
             {errors.email && <div className="text-red-600 text-xs mt-1">{errors.email}</div>}
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Phone Number</label>
-            <input name="phone" type="tel" value={form.phone} onChange={handleChange} required className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" />
-            {errors.phone && <div className="text-red-600 text-xs mt-1">{errors.phone}</div>}
           </div>
           <div>
             <label className="block text-sm mb-1">Password</label>

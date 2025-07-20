@@ -29,7 +29,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   return (
     <button
       onClick={handleGoogleLogin}
-      className={`w-full flex items-center justify-center gap-3 bg-white text-gray-700 py-2 px-4 border border-gray-300 rounded-md font-medium hover:bg-gray-50 transition-colors ${className}`}
+      className={`w-full flex items-center justify-center gap-3 bg-orange-500 text-white py-2 px-4 border border-gray-300 rounded-md font-medium hover:bg-orange-400 hover:cursor-pointer transition-colors ${className}`}
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24">
         <path

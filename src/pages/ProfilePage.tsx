@@ -9,7 +9,6 @@ const ProfilePage = () => {
   const [user, setUser] = useState<any>(null)
   const [form, setForm] = useState({
     email: '',
-    phone: '',
     displayName: '',
     about: '',
     expertSubject: '',
@@ -42,14 +41,13 @@ const ProfilePage = () => {
       setUser(data.user)
       setForm({
         email: data.user.email || '',
-        phone: data.user.user_metadata?.phone || '',
         displayName: data.user.user_metadata?.displayName || '',
         about: data.user.user_metadata?.about || '',
         expertSubject: data.user.user_metadata?.expertSubject || '',
         targetYear: data.user.user_metadata?.targetYear || '',
         preparingSince: data.user.user_metadata?.preparingSince || '',
         photoUrl: data.user.user_metadata?.photoUrl || '',
-        publicAccount: !!data.user.user_metadata?.publicAccount
+        publicAccount: data.user.user_metadata?.publicAccount !== false // Default to true unless explicitly set to false
       })
       setPhotoPreview(data.user.user_metadata?.photoUrl || '')
     })
@@ -97,9 +95,9 @@ const ProfilePage = () => {
       if (uploadedUrl) photoUrl = uploadedUrl
     }
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Update user metadata
+      const { error: userError } = await supabase.auth.updateUser({
         data: {
-          phone: form.phone,
           displayName: form.displayName,
           about: form.about,
           expertSubject: form.expertSubject,
@@ -109,7 +107,38 @@ const ProfilePage = () => {
           publicAccount: form.publicAccount
         }
       })
-      if (error) throw error
+      if (userError) throw userError
+
+      // Sync to public_profiles table if profile is public
+      if (form.publicAccount) {
+        const { error: profileError } = await supabase
+          .from('public_profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            display_name: form.displayName,
+            about: form.about,
+            expert_subject: form.expertSubject,
+            target_year: form.targetYear,
+            preparing_since: form.preparingSince,
+            photo_url: photoUrl
+          }, { onConflict: 'id' })
+        
+        if (profileError) {
+          console.error('Error syncing to public profiles:', profileError)
+        }
+      } else {
+        // Remove from public profiles if profile is private
+        const { error: deleteError } = await supabase
+          .from('public_profiles')
+          .delete()
+          .eq('id', user.id)
+        
+        if (deleteError) {
+          console.error('Error removing from public profiles:', deleteError)
+        }
+      }
+
       toast.success('Profile updated!')
       setPhotoFile(null)
     } catch (err: any) {
@@ -126,7 +155,7 @@ const ProfilePage = () => {
       <div className="bg-card border rounded-lg shadow-lg p-6 w-full max-w-md md:max-w-3xl">
         <h2 className="text-2xl font-bold mb-4 text-center">Profile</h2>
         <form onSubmit={handleUpdate} className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
-          {/* Left column: photo, email, phone, display name */}
+          {/* Left column: photo, email, display name */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center gap-2">
               <div className="relative w-24 h-24">
@@ -162,10 +191,6 @@ const ProfilePage = () => {
             <div>
               <label className="block text-sm mb-1">Email</label>
               <input name="email" type="email" value={form.email} disabled className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground cursor-not-allowed" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Phone Number</label>
-              <input name="phone" type="tel" value={form.phone} onChange={handleChange} className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground" />
             </div>
             <div>
               <label className="block text-sm mb-1">Display Name</label>

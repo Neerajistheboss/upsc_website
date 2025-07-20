@@ -10,7 +10,7 @@ interface AuthContextType {
   isLoggedIn: boolean
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, phone?: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   signInWithGoogle: () => Promise<void>
 }
@@ -55,6 +55,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Show appropriate toast messages
         if (event === 'SIGNED_IN') {
           toast.success('Successfully logged in!')
+          
+                  // For new Google OAuth users, set publicAccount to true by default and sync to public_profiles
+        if (session?.user && event === 'SIGNED_IN' && session.user.app_metadata?.provider === 'google') {
+          const currentMetadata = session.user.user_metadata || {}
+          if (currentMetadata.publicAccount === undefined) {
+            try {
+              // Update user metadata
+              await supabase.auth.updateUser({
+                data: {
+                  ...currentMetadata,
+                  publicAccount: true
+                }
+              })
+              
+              // Add to public_profiles table
+              await supabase
+                .from('public_profiles')
+                .upsert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  display_name: currentMetadata.displayName || session.user.email?.split('@')[0],
+                  about: currentMetadata.about || '',
+                  expert_subject: currentMetadata.expertSubject || '',
+                  target_year: currentMetadata.targetYear || '',
+                  preparing_since: currentMetadata.preparingSince || '',
+                  photo_url: currentMetadata.photoUrl || ''
+                }, { onConflict: 'id' })
+            } catch (error) {
+              console.error('Error setting default public account for Google user:', error)
+            }
+          }
+        }
         } else if (event === 'SIGNED_OUT') {
           toast.success('Successfully logged out!')
         }
@@ -74,13 +106,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  const signUp = async (email: string, password: string, phone?: string) => {
+  const signUp = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: phone ? { phone } : undefined
+          data: {
+            publicAccount: true // Make profile public by default
+          }
         }
       })
       if (error) throw error

@@ -229,7 +229,10 @@ const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
         <DropdownMenuItem asChild>
           <Link to="/profile">Profile</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onLogout}>Logout</DropdownMenuItem>
+        <DropdownMenuItem onClick={onLogout}><Link to="/">
+        Logout
+        </Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -240,7 +243,7 @@ const Navbar = () => {
   const [authOpen, setAuthOpen] = useState(false)
   const { user, signOut } = useAuth()
 
-  const navigationItems = [
+  const navigationItems: Array<{ href: string; label: string; icon?: string }> = [
     // { href: "/", label: "Home" },
     // { href: "#syllabus", label: "Syllabus" },
     // { href: "#practice", label: "Practice" },
@@ -249,6 +252,7 @@ const Navbar = () => {
     { href: "/pyq", label: "Previous Year Question Papers" },
     { href: "/current-affairs", label: "Current Affairs" },
     { href: "/species-in-news", label: "Species in News" },
+    { href: "/community", label: "Community" },
     // { href: "/bookmarks", label: "My Bookmarks", icon: "bookmark" },
   ]
 
@@ -286,7 +290,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left side - Mobile menu button */}
-          <div className="flex justify-between items-center space-x-4 w-full">
+          <div className="flex justify-between items-center space-x-4 w-full md:w-fit">
             {/* Mobile menu button */}
       <div className='flex'>
             <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -438,14 +442,16 @@ const Navbar = () => {
           </div>
 
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-6 ">
             {navigationItems.map((item) => (
               <Link 
                 key={item.href}
                 to={item.href} 
                 className="text-sm font-medium transition-colors hover:text-primary"
               >
+                <div className='w-fit'>
                 {item.label}
+                </div>
               </Link>
             ))}
           </div>
@@ -455,6 +461,7 @@ const Navbar = () => {
             <ThemeDropdown />
             {user ? (
               <>
+              
                 <UserMenu user={user} onLogout={signOut} />
               </>
             ) : (
