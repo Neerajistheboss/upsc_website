@@ -66,6 +66,7 @@ export const useRooms = () => {
 
   // Join a room (fetch messages and subscribe)
   const joinRoom = useCallback(async (room: Room) => {
+    console.log('joining room', room)
     setCurrentRoom(room);
     setLoadingMessages(true);
     const { data, error } = await supabase
@@ -100,7 +101,7 @@ export const useRooms = () => {
     return () => {
       if (roomsSubscription.current) roomsSubscription.current.unsubscribe();
     };
-  }, [fetchRooms]);
+  }, []);
 
   // Subscribe to real-time updates for messages in the current room
   useEffect(() => {
@@ -115,7 +116,7 @@ export const useRooms = () => {
     return () => {
       if (messagesSubscription.current) messagesSubscription.current.unsubscribe();
     };
-  }, [currentRoom, joinRoom]);
+  }, [currentRoom]);
 
   // Presence: subscribe to presence in the current room
   useEffect(() => {

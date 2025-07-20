@@ -8,14 +8,13 @@ export type { Friend, FriendRequest, SentFriendRequest }
 
 export const useFriends = () => {
   const { user } = useAuth()
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
-  const [sentRequests, setSentRequests] = useState<SentFriendRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Fetch friends
   const fetchFriends = async () => {
+    let friends: Friend[] = []
+    console.log('Fetching friends for user:', user?.id)
     if (!user) return
 
     try {
@@ -24,17 +23,20 @@ export const useFriends = () => {
         .rpc('get_user_friends', { user_uuid: user.id })
 
       if (error) throw error
-      setFriends(data || [])
+      friends = data as Friend[]
     } catch (err) {
       console.error('Error fetching friends:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch friends')
     } finally {
+
       setLoading(false)
+      return friends
     }
   }
 
   // Fetch friend requests
   const fetchFriendRequests = async () => {
+    let friendRequests: FriendRequest[] = []
     if (!user) return
 
     try {
@@ -42,15 +44,18 @@ export const useFriends = () => {
         .rpc('get_user_friend_requests', { user_uuid: user.id })
 
       if (error) throw error
-      setFriendRequests(data || [])
+      
+      friendRequests = data as FriendRequest[]
     } catch (err) {
       console.error('Error fetching friend requests:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch friend requests')
     }
+    return friendRequests
   }
 
   // Fetch sent friend requests
   const fetchSentRequests = async () => {
+    let sentRequests: SentFriendRequest[] = []
     if (!user) return
 
     try {
@@ -58,11 +63,12 @@ export const useFriends = () => {
         .rpc('get_sent_friend_requests', { user_uuid: user.id })
 
       if (error) throw error
-      setSentRequests(data || [])
+      sentRequests = data as SentFriendRequest[]
     } catch (err) {
       console.error('Error fetching sent requests:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch sent requests')
     }
+    return sentRequests
   }
 
   // Send friend request
@@ -223,11 +229,11 @@ export const useFriends = () => {
 
   // Initial load
   useEffect(() => {
+    console.log('useEffect called')
     if (!user?.id) return
 
     const loadAllData = async () => {
       // Prevent multiple simultaneous loads
-      if (loading) return
       
       console.log('Loading friends data for user:', user.id)
       
@@ -271,9 +277,6 @@ export const useFriends = () => {
   }
 
   return {
-    friends,
-    friendRequests,
-    sentRequests,
     loading,
     error,
     sendFriendRequest,
@@ -283,6 +286,9 @@ export const useFriends = () => {
     removeFriend,
     checkFriendship,
     checkFriendRequestStatus,
-    refreshData
+    refreshData,
+    fetchFriends,
+    fetchFriendRequests,
+    fetchSentRequests
   }
 } 

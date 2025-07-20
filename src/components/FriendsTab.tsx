@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useFriends } from '@/hooks/useFriends'
 import type { Friend, FriendRequest, SentFriendRequest } from '@/types/friends'
 import { useAuth } from '@/contexts/AuthContext'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { User, UserPlus, UserCheck, Clock, MessageSquare, X, Users, Inbox, Send } from 'lucide-react'
 import { toast } from 'sonner'
+import GoogleLoginButton from './GoogleLoginButton'
 
 interface FriendsTabProps {
   className?: string
@@ -13,19 +14,47 @@ interface FriendsTabProps {
 
 export const FriendsTab: React.FC<FriendsTabProps> = ({ className = '' }) => {
   const { user } = useAuth()
-  const { 
-    friends, 
-    friendRequests, 
-    sentRequests, 
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
+  const [sentRequests, setSentRequests] = useState<SentFriendRequest[]>([])
+  const {  
     loading, 
     error,
     acceptFriendRequest,
     rejectFriendRequest,
     cancelFriendRequest,
-    removeFriend
+    removeFriend,
+    fetchFriends,
+    fetchFriendRequests,
+    fetchSentRequests
   } = useFriends()
 
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'sent'>('friends')
+  useEffect(() => {
+    if (activeTab === 'friends') {
+      const fetchFriendsData = async () => {
+        const friendsData = await fetchFriends()
+        setFriends(friendsData as Friend[])
+      }
+      fetchFriendsData()
+    }
+    if (activeTab === 'requests') {
+      const fetchFriendRequestsData = async () => {
+        const friendRequestsData = await fetchFriendRequests()
+        setFriendRequests(friendRequestsData as FriendRequest[])
+      }
+      fetchFriendRequestsData()
+    }
+    if (activeTab === 'sent') {
+      const fetchSentRequestsData = async () => {
+        const sentRequestsData = await fetchSentRequests()
+        setSentRequests(sentRequestsData as SentFriendRequest[])
+      }
+      fetchSentRequestsData()
+    }
+  }, [activeTab])
+
+
 
   if (!user) {
     return (
@@ -33,18 +62,21 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ className = '' }) => {
         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">Sign in to see your friends</h3>
         <p className="text-muted-foreground">Connect with fellow UPSC aspirants and build your study network.</p>
+        <div className='w-fit mx-auto my-4'>
+          <GoogleLoginButton loginText='Sign in with Google'/> 
+        </div>
       </div>
     )
   }
 
-  if (loading) {
-    return (
-      <div className={`text-center py-8 ${className}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading your connections...</p>
-      </div>
-    )
-  }
+  // if (loading) {
+  //   return (
+  //     <div className={`text-center py-8 ${className}`}>
+  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+  //       <p className="text-muted-foreground">Loading your connections...</p>
+  //     </div>
+  //   )
+  // }
 
   if (error) {
     return (
