@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   update,
   DataSnapshot,
+  onDisconnect,
 } from 'firebase/database';
 
 // --- Firebase config from .env ---
@@ -26,9 +27,7 @@ const firebaseConfig = {
 
 // Initialize Firebase app only once
 const app = initializeApp(firebaseConfig);
-console.log('firebaseConfig', app)
 const db = getDatabase(app);
-console.log('db', db)
 
 // --- Types ---
 type Room = {
@@ -43,6 +42,15 @@ type Message = {
   createdAt: number;
 };
 
+const getOrCreateUserId = () => {
+  let id = localStorage.getItem('firebaseUserId');
+  if (!id) {
+    id = 'guest_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('firebaseUserId', id);
+  }
+  return id;
+};
+
 const Rooms: React.FC = () => {
   // Room state
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -55,8 +63,15 @@ const Rooms: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [displayNamePrompt, setDisplayNamePrompt] = useState(false);
 
+  // Presence state
+  const [onlineCounts, setOnlineCounts] = useState<{ [roomId: string]: number }>({});
+  const [totalOnline, setTotalOnline] = useState(0);
+
   const messageInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Unique user ID for presence
+  const [userId] = useState(getOrCreateUserId());
 
   // --- Fetch rooms in realtime ---
   useEffect(() => {
@@ -94,6 +109,40 @@ const Rooms: React.FC = () => {
     return () => off(messagesRef, 'value', handle);
   }, [currentRoom]);
 
+  // --- Presence: update on mount, room change, and disconnect ---
+  useEffect(() => {
+    const presenceRef = ref(db, `presence/${userId}`);
+    // Mark as online and in current room
+    update(presenceRef, { online: true, roomId: currentRoom?.id || null });
+    // On disconnect, mark as offline
+    onDisconnect(presenceRef).update({ online: false, roomId: null });
+    return () => {
+      // Optionally mark as offline on unmount
+      update(presenceRef, { online: false, roomId: null });
+    };
+  }, [userId, currentRoom?.id]);
+
+  // --- Listen for presence changes to update counts ---
+  useEffect(() => {
+    const presenceRef = ref(db, 'presence');
+    const handle = onValue(presenceRef, (snapshot: DataSnapshot) => {
+      const data = snapshot.val() || {};
+      let total = 0;
+      const roomCounts: { [roomId: string]: number } = {};
+      Object.values<any>(data).forEach((user: any) => {
+        if (user.online) {
+          total += 1;
+          if (user.roomId) {
+            roomCounts[user.roomId] = (roomCounts[user.roomId] || 0) + 1;
+          }
+        }
+      });
+      setTotalOnline(total);
+      setOnlineCounts(roomCounts);
+    });
+    return () => off(presenceRef, 'value', handle);
+  }, []);
+
   // --- Auto-scroll chat ---
   useEffect(() => {
     if (chatEndRef.current) {
@@ -103,7 +152,6 @@ const Rooms: React.FC = () => {
 
   // --- Room creation ---
   const handleCreateRoom = async (e: React.FormEvent) => {
-    console.log('handleCreateRoom', newRoomName)
     e.preventDefault();
     if (!newRoomName.trim()) return;
     const roomsRef = ref(db, 'rooms');
@@ -146,7 +194,14 @@ const Rooms: React.FC = () => {
 
   return (
     <div className="py-8">
-      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase)</h2>
+      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+        <MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase)
+        <span className="ml-4 text-base font-normal text-muted-foreground">
+          Total online: 
+          <span className="inline-block w-2 h-2 rounded-full bg-green-500 mx-2 align-middle"></span>
+          {totalOnline}
+          </span>
+      </h2>
       <div className="grid md:grid-cols-3 gap-8">
         {/* Room List and Create Room */}
         <div className="md:col-span-1 space-y-6">
@@ -169,10 +224,20 @@ const Rooms: React.FC = () => {
                 {rooms.map(room => (
                   <li key={room.id}>
                     <button
-                      className={`w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
+                      className={`flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
                       onClick={() => handleJoinRoom(room)}
                     >
+                      {/* Green dot if online */}
                       {room.name}
+                      <div>
+
+                      {onlineCounts[room.id] > 0 && (
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
+                      )}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {onlineCounts[room.id] || 0} online
+                      </span>
+                      </div>
                     </button>
                   </li>
                 ))}
@@ -207,7 +272,7 @@ const Rooms: React.FC = () => {
             <div className="flex flex-col h-[32rem] bg-card border rounded-lg">
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="font-semibold text-lg">Room: {currentRoom.name}</div>
-                <button className="text-sm text-muted-foreground hover:text-primary" onClick={() => setCurrentRoom(null)}>Leave</button>
+                <button className="text-sm text-muted-foreground hover:text-primary px-4 py-2 rounded-md bg-red-500 text-white" onClick={() => setCurrentRoom(null)}>Leave Room</button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
                 {messages.length === 0 ? (
@@ -215,7 +280,7 @@ const Rooms: React.FC = () => {
                 ) : (
                   messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.user === displayName ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.user === displayName ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                      <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.user === displayName ? 'bg-primary/90 text-primary-foreground' : 'bg-muted text-foreground'}`}>
                         <div className="text-xs font-medium mb-1">{msg.user}</div>
                         <div>{msg.content}</div>
                         <div className="text-[10px] text-muted-foreground mt-1 text-right">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
