@@ -101,7 +101,7 @@ const PracticeTests = <div className="bg-card border rounded-lg p-6 text-center 
 </div>
 
 const Community = (
-  <Link to="/students">
+  <Link to="/community">
     <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer min-w-80 relative">
       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
         <Handshake className="w-6 h-6 text-primary" />

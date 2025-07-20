@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, CheckCircle, XCircle, Share, Share2, ShareIcon, MessageSquareShare } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import {
   getDatabase,
@@ -13,6 +13,7 @@ import {
   DataSnapshot,
   onDisconnect,
 } from 'firebase/database';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 // --- Firebase config from .env ---
 const firebaseConfig = {
@@ -33,6 +34,7 @@ const db = getDatabase(app);
 type Room = {
   id: string;
   name: string;
+  password?: string;
 };
 
 type Message = {
@@ -55,7 +57,15 @@ const Rooms: React.FC = () => {
   // Room state
   const [rooms, setRooms] = useState<Room[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomPassword, setNewRoomPassword] = useState('');
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [joinPassword, setJoinPassword] = useState('');
+  const [roomToJoin, setRoomToJoin] = useState<Room | null>(null);
+  const [roomError, setRoomError] = useState('');
+  const [roomSuccess, setRoomSuccess] = useState('');
+  const [showShare, setShowShare] = useState(false);
+  const [roomTab, setRoomTab] = useState<'public' | 'private'>('public');
+  const [roomNameAvailable, setRoomNameAvailable] = useState<null | boolean>(null);
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -81,6 +91,7 @@ const Rooms: React.FC = () => {
       const roomList = Object.entries(data).map(([id, value]: any) => ({
         id,
         name: value.name,
+        password: value.password || '',
       }));
       setRooms(roomList);
     });
@@ -150,24 +161,74 @@ const Rooms: React.FC = () => {
     }
   }, [messages]);
 
-  // --- Room creation ---
+  // --- Room name availability check ---
+  useEffect(() => {
+    if (!newRoomName.trim()) {
+      setRoomNameAvailable(null);
+      return;
+    }
+    const exists = rooms.some(r => r.name.trim().toLowerCase() === newRoomName.trim().toLowerCase());
+    setRoomNameAvailable(!exists);
+  }, [newRoomName, rooms]);
+
+  // --- Room creation with unique name and password ---
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRoomError('');
+    setRoomSuccess('');
     if (!newRoomName.trim()) return;
+    // Check for unique name (case-insensitive)
+    const exists = rooms.some(r => r.name.trim().toLowerCase() === newRoomName.trim().toLowerCase());
+    if (exists) {
+      setRoomError('Room name already exists.');
+      return;
+    }
     const roomsRef = ref(db, 'rooms');
     const newRoomRef = push(roomsRef);
-    await set(newRoomRef, { name: newRoomName.trim() });
+    await set(newRoomRef, { name: newRoomName.trim(), password: newRoomPassword });
     setNewRoomName('');
+    setNewRoomPassword('');
+    setRoomSuccess('Room created!');
+    setTimeout(() => setRoomSuccess(''), 2000);
   };
 
-  // --- Join room ---
+  // --- Join room with password check ---
   const handleJoinRoom = (room: Room) => {
-    if (!displayName) {
-      setDisplayNamePrompt(true);
-      setCurrentRoom(room);
+    setRoomError('');
+    setRoomSuccess('');
+    if (room.password) {
+      setRoomToJoin(room);
+      setJoinPassword('');
     } else {
       setCurrentRoom(room);
+      setShowShare(true);
     }
+  };
+
+  const handleJoinWithPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roomToJoin) return;
+    if (roomToJoin.password !== joinPassword) {
+      setRoomError('Incorrect password.');
+      return;
+    }
+    setCurrentRoom(roomToJoin);
+    setRoomToJoin(null);
+    setJoinPassword('');
+    setShowShare(true);
+  };
+
+  // --- Share link logic ---
+  const getRoomShareLink = () => {
+    if (!currentRoom) return '';
+    const url = window.location.origin + window.location.pathname + `?room=${currentRoom.id}`;
+    return url;
+  };
+  const handleCopyLink = () => {
+    const link = getRoomShareLink();
+    navigator.clipboard.writeText(link);
+    setRoomSuccess('Link copied!');
+    setTimeout(() => setRoomSuccess(''), 1500);
   };
 
   // --- Set display name and join room ---
@@ -200,47 +261,103 @@ const Rooms: React.FC = () => {
           Total online: 
           <span className="inline-block w-2 h-2 rounded-full bg-green-500 mx-2 align-middle"></span>
           {totalOnline}
-          </span>
+        </span>
       </h2>
+      {/* Tabs for Public/Private Rooms and Create Room Dialog */}
+      {!currentRoom && (
+        <>
+          <div className="flex gap-2 mb-4">
+            <button
+              className={`px-4 py-2 rounded-t-md border-b-2 transition-colors ${roomTab === 'public' ? 'border-primary text-primary bg-background' : 'border-transparent text-muted-foreground bg-muted'}`}
+              onClick={() => setRoomTab('public')}
+            >
+              Public Rooms
+            </button>
+            <button
+              className={`px-4 py-2 rounded-t-md border-b-2 transition-colors ${roomTab === 'private' ? 'border-primary text-primary bg-background' : 'border-transparent text-muted-foreground bg-muted'}`}
+              onClick={() => setRoomTab('private')}
+            >
+              Private Rooms
+            </button>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="w-full mb-2 bg-primary text-primary-foreground px-4 py-2 rounded-md font-semibold">+ Create Room</button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create a New Room</DialogTitle>
+                <DialogDescription>Room names must be unique. Password is optional for private rooms.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateRoom} className="flex flex-col gap-2 mt-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newRoomName}
+                    onChange={e => setNewRoomName(e.target.value)}
+                    placeholder="Room name..."
+                    className="px-3 py-2 border rounded-md bg-background text-foreground w-full pr-8"
+                    autoFocus
+                    autoComplete="new-email"
+                  />
+                  {newRoomName && roomNameAvailable === true && (
+                    <CheckCircle className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" />
+                  )}
+                  {newRoomName && roomNameAvailable === false && (
+                    <XCircle className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 w-5 h-5" />
+                  )}
+                </div>
+                <input
+                  type="password"
+                  value={newRoomPassword}
+                  onChange={e => setNewRoomPassword(e.target.value)}
+                  placeholder="Password (optional)"
+                  className="px-3 py-2 border rounded-md bg-background text-foreground"
+                  autoComplete="new-password"
+                />
+                <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md mt-2">Create</button>
+                {roomError && <div className="text-red-500 text-xs mt-1">{roomError}</div>}
+                {roomSuccess && <div className="text-green-600 text-xs mt-1">{roomSuccess}</div>}
+              </form>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
       <div className="grid md:grid-cols-3 gap-8">
         {/* Room List and Create Room */}
         <div className="md:col-span-1 space-y-6">
-          <form onSubmit={handleCreateRoom} className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={newRoomName}
-              onChange={e => setNewRoomName(e.target.value)}
-              placeholder="Create new room..."
-              className="flex-1 px-3 py-2 border rounded-md bg-background text-foreground"
-            />
-            <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md">Create</button>
-          </form>
           <div className="bg-card border rounded-lg p-4 max-h-96 overflow-y-auto">
             <h3 className="font-semibold mb-2">Available Rooms</h3>
             {rooms.length === 0 ? (
               <div className="text-muted-foreground">No rooms yet. Create one!</div>
             ) : (
               <ul className="space-y-2">
-                {rooms.map(room => (
-                  <li key={room.id}>
-                    <button
-                      className={`flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
-                      onClick={() => handleJoinRoom(room)}
-                    >
-                      {/* Green dot if online */}
-                      {room.name}
-                      <div>
-
-                      {onlineCounts[room.id] > 0 && (
-                        <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
-                      )}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {onlineCounts[room.id] || 0} online
-                      </span>
+                {rooms
+                  .filter(room => roomTab === 'public' ? !room.password : !!room.password)
+                  .map(room => (
+                    <li key={room.id}>
+                      <div
+                        className={`flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
+                       
+                      >
+                        {room.name}
+                        <div className='flex items-center justify-between w-full'>
+                          <div  onClick={() => handleJoinRoom(room)} className='hover:cursor-pointer flex items-center justify-between w-full'>
+                            <div>
+                          {onlineCounts[room.id] > 0 && (
+                            <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
+                          )}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {onlineCounts[room.id] || 0} online
+                          </span>
+                          {room.password && <span className="ml-2 text-xs text-yellow-600">🔒</span>}
+                          </div>
+                          </div>
+                      {/* <div className=' w-full hover:cursor-pointer  text-center'>Share</div> */}
+                        </div>
                       </div>
-                    </button>
-                  </li>
-                ))}
+                    </li>
+                  ))}
               </ul>
             )}
           </div>
@@ -268,6 +385,40 @@ const Rooms: React.FC = () => {
               </form>
             </div>
           )}
+          {roomToJoin && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <form onSubmit={handleJoinWithPassword} className="bg-background rounded-lg shadow-lg p-6 w-full max-w-sm relative">
+                <h3 className="text-lg font-semibold mb-4 text-center">Enter password for <span className='text-primary'>{roomToJoin.name}</span></h3>
+                <input
+                  type="password"
+                  value={joinPassword}
+                  onChange={e => setJoinPassword(e.target.value)}
+                  placeholder="Room password"
+                  className="w-full px-3 py-2 border rounded-md bg-background text-foreground mb-4"
+                  autoFocus
+                  maxLength={32}
+                />
+                <div className="flex gap-2 justify-end">
+                  <button type="button" className="px-4 py-2 rounded-md bg-muted text-foreground" onClick={() => setRoomToJoin(null)}>Cancel</button>
+                  <button type="submit" className="px-4 py-2 rounded-md bg-primary text-primary-foreground">Join</button>
+                </div>
+                {roomError && <div className="text-red-500 text-xs mt-2">{roomError}</div>}
+              </form>
+            </div>
+          )}
+          {/* {showShare && currentRoom && (
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="text"
+                value={getRoomShareLink()}
+                readOnly
+                className="px-2 py-1 border rounded text-xs w-64 bg-background"
+                onFocus={e => e.target.select()}
+              />
+              <button onClick={handleCopyLink} className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Copy Link</button>
+              {roomSuccess && <span className="text-green-600 text-xs ml-2">{roomSuccess}</span>}
+            </div>
+          )} */}
           {currentRoom ? (
             <div className="flex flex-col h-[32rem] bg-card border rounded-lg">
               <div className="p-4 border-b flex items-center justify-between">
@@ -276,7 +427,7 @@ const Rooms: React.FC = () => {
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
                 {messages.length === 0 ? (
-                  <div className="text-muted-foreground">No messages yet. Start the conversation!</div>
+                  <div className="text-muted-foreground rounded-md p-4 text-center h-11/12 flex items-center justify-center">No messages yet. Start the conversation!</div>
                 ) : (
                   messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.user === displayName ? 'justify-end' : 'justify-start'}`}>
@@ -304,9 +455,7 @@ const Rooms: React.FC = () => {
               </form>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[32rem] bg-card border rounded-lg text-muted-foreground">
-              Select a room to join the chat.
-            </div>
+            null
           )}
         </div>
       </div>
