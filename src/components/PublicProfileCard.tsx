@@ -24,6 +24,8 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   const displayName = user.display_name || user.email?.split('@')[0] || 'User'
   const photoUrl = user.photo_url
 
+  console.log('RENDERING PUBLIC PROFILE CARD')
+
   return (
     <div className="group relative bg-gradient-to-br from-card to-card/80 border border-border/50 rounded-xl p-6 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1">
       {/* Background pattern */}
@@ -35,9 +37,10 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
         <div className="flex items-start gap-4 mb-4">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-0.5">
-              {photoUrl ? (
+              {/* If user has a photo_url (Google login or uploaded), show it. Otherwise, show default icon. */}
+              {user.photo_url ? (
                 <img 
-                  src={photoUrl} 
+                  src={user.photo_url} 
                   alt={displayName} 
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -93,14 +96,16 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
 
           {/* Action buttons */}
           <div className="flex gap-2 pt-2">
-            <button className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium py-2 px-3 rounded-lg transition-colors duration-200">
+            <button className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs fontium py-2 px-3 rounded-lg transition-colors duration-200">
               View Profile
             </button>
-            <ConnectButton 
-              targetUserId={user.id}
-              targetUserName={displayName}
-              className="flex-1"
-            />
+            <div>
+            {/* <ConnectButton 
+          targetUserId={user.id}
+          targetUserName={displayName}
+          className="flex-1"
+          /> */}
+          </div>
           </div>
         </div>
       </div>

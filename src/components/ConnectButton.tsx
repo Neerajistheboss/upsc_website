@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { useFriends } from '@/hooks/useFriends'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,12 +16,10 @@ export const ConnectButton: React.FC<ConnectButtonProps> = ({
   targetUserName,
   className = ''
 }) => {
+  console.log('ConnectButton rendered',targetUserId)
   const { user } = useAuth()
   const { 
     sendFriendRequest, 
-    acceptFriendRequest, 
-    rejectFriendRequest, 
-    cancelFriendRequest,
     removeFriend,
     checkFriendship, 
     checkFriendRequestStatus,
@@ -33,45 +31,46 @@ export const ConnectButton: React.FC<ConnectButtonProps> = ({
   const [showMessageInput, setShowMessageInput] = useState(false)
   const [message, setMessage] = useState('')
 
-  // Check initial status
-  useEffect(() => {
+
+  useEffect(()=>{
+    console.log('USE EFFECT')
+    console.log(status,loading,showMessageInput,message)
+  },[status,loading,showMessageInput,message])
+
+  // Memoize checkStatus to avoid recreating on every render
+  const checkStatus = useCallback(async () => {
     if (!user || user.id === targetUserId) return
-
-    const checkStatus = async () => {
-      try {
-        const [isFriends, requestStatus] = await Promise.all([
-          checkFriendship(targetUserId),
-          checkFriendRequestStatus(targetUserId)
-        ])
-
-        if (isFriends) {
-          setStatus('friends')
-        } else if (requestStatus === 'pending') {
-          // Need to determine if sent or received
-          // For now, we'll check if we're the sender by trying to cancel
-          setStatus('pending_sent') // This will be refined
-        } else {
-          setStatus('none')
-        }
-      } catch (error) {
-        console.error('Error checking connection status:', error)
+    try {
+      const [isFriends, requestStatus] = await Promise.all([
+        checkFriendship(targetUserId),
+        checkFriendRequestStatus(targetUserId)
+      ])
+      if (isFriends) {
+        setStatus('friends')
+      } else if (requestStatus === 'pending') {
+        setStatus('pending_sent')
+      } else {
+        setStatus('none')
       }
+    } catch (error) {
+      console.error('Error checking connection status:', error)
     }
-
-    checkStatus()
   }, [user, targetUserId, checkFriendship, checkFriendRequestStatus])
 
-  const handleConnect = async () => {
+  useEffect(() => {
+    checkStatus()
+    // Only run when user, targetUserId, or the checkStatus function changes
+  }, [])
+
+  const handleConnect = () => {
     if (!user) {
       toast.error('Please log in to connect with others')
       return
     }
-
     if (user.id === targetUserId) {
       toast.error('You cannot connect with yourself')
       return
     }
-
     setShowMessageInput(true)
   }
 
@@ -80,7 +79,6 @@ export const ConnectButton: React.FC<ConnectButtonProps> = ({
       toast.error('Please enter a message')
       return
     }
-
     setLoading(true)
     try {
       await sendFriendRequest(targetUserId, message.trim())
@@ -158,6 +156,9 @@ export const ConnectButton: React.FC<ConnectButtonProps> = ({
 
   // Don't show button for own profile
   if (!user || user.id === targetUserId) {
+    console.log('user', user)
+    console.log('targetUserId', targetUserId)
+    console.log('ConnectButton not rendered')
     return null
   }
 
