@@ -200,8 +200,14 @@ const Rooms: React.FC = () => {
       setRoomToJoin(room);
       setJoinPassword('');
     } else {
-      setCurrentRoom(room);
-      setShowShare(true);
+      // For non-password rooms, still need display name
+      if (!displayName) {
+        setDisplayNamePrompt(true);
+        setCurrentRoom(room);
+      } else {
+        setCurrentRoom(room);
+        setShowShare(true);
+      }
     }
   };
 
