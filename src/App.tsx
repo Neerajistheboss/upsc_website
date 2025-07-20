@@ -13,6 +13,7 @@ import SpeciesManagementPage from '@/pages/SpeciesManagementPage'
 import BookmarksPage from '@/pages/BookmarksPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import AuthCallback from '@/pages/AuthCallback'
 import ProfilePage from '@/pages/ProfilePage'
 import StudentsPage from '@/pages/StudentsPage'
 import { Toaster } from '@/components/ui/sonner'
@@ -38,6 +39,7 @@ function App() {
             <Route path="/admin/species" element={<SpeciesManagementPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/students" element={<StudentsPage />} />
           </Routes>

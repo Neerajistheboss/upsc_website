@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import GoogleLoginButton from '@/components/GoogleLoginButton'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -25,10 +26,32 @@ const LoginPage = () => {
     }
   }
 
+  const handleGoogleSuccess = () => {
+    // Google login will redirect to auth callback, so we don't need to navigate here
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="bg-card border rounded-lg shadow-lg p-6 w-full max-w-sm">
         <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        
+        {/* Google Login Button */}
+        <GoogleLoginButton 
+          variant="login" 
+          onSuccess={handleGoogleSuccess}
+          className="mb-4"
+        />
+        
+        {/* Separator */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">Email</label>

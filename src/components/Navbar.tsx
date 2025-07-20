@@ -13,7 +13,9 @@ import {
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/hooks/useAuth'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import GoogleLoginButton from './GoogleLoginButton'
 
 const THEME_OPTIONS = [
   { value: 'light', label: 'Light', icon: (
@@ -138,11 +140,33 @@ const AuthModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =>
     }
   }
 
+  const handleGoogleSuccess = () => {
+    onClose()
+  }
+
   return open ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-sm relative">
         <button className="absolute top-2 right-2 text-xl" onClick={onClose}>&times;</button>
         <h2 className="text-xl font-bold mb-4 text-center">{mode === 'login' ? 'Login' : 'Sign Up'}</h2>
+        
+        {/* Google Login Button */}
+        <GoogleLoginButton 
+          variant={mode === 'signup' ? 'register' : 'login'} 
+          onSuccess={handleGoogleSuccess}
+          className="mb-4"
+        />
+        
+        {/* Separator */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">Email</label>
@@ -211,7 +235,7 @@ const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const { user, signOut } = useAuth()
 
   const navigationItems = [
     // { href: "/", label: "Home" },
@@ -251,14 +275,7 @@ const Navbar = () => {
     }
   ]
 
-  React.useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
-    })
-    // Get current user on mount
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user || null))
-    return () => { listener?.subscription.unsubscribe() }
-  }, [])
+
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -315,7 +332,7 @@ const Navbar = () => {
                         <ThemeDropdown />
                         {user ? (
                           <>
-                            <UserMenu user={user} onLogout={async () => { await supabase.auth.signOut(); setUser(null); }} />
+                            <UserMenu user={user} onLogout={signOut} />
                           </>
                         ) : (
                           <>
@@ -417,7 +434,7 @@ const Navbar = () => {
             <ThemeDropdown />
             {user ? (
               <>
-                <UserMenu user={user} onLogout={async () => { await supabase.auth.signOut(); setUser(null); }} />
+                <UserMenu user={user} onLogout={signOut} />
               </>
             ) : (
               <>

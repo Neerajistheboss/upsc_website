@@ -104,3 +104,149 @@ $$ LANGUAGE plpgsql VOLATILE;
 ```
 
 This will allow the homepage to increment and display the total visitor count.
+
+# UPSC 2025 Application
+
+A comprehensive UPSC preparation application with previous year question papers, current affairs, and species in news.
+
+## Features
+
+- **Previous Year Question Papers**: Access and view UPSC question papers with answer keys
+- **Current Affairs**: Stay updated with latest current affairs
+- **Species in News**: Track species mentioned in current affairs
+- **Bookmarks**: Save important content for later reference
+- **Authentication**: Secure login with email/password and Google OAuth
+- **Responsive Design**: Works on desktop and mobile devices
+- **PWA Support**: Install as a progressive web app
+
+## Authentication
+
+The application supports multiple authentication methods:
+
+### Email/Password Authentication
+- Traditional email and password registration/login
+- Email verification required for new accounts
+
+### Google OAuth Authentication
+- One-click login with Google account
+- No password required
+- Automatic account creation for new users
+
+#### Setting up Google OAuth
+
+1. Follow the detailed setup guide in [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md)
+2. Configure Google Cloud Console OAuth credentials
+3. Enable Google provider in Supabase dashboard
+4. Set up redirect URLs for your domain
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- Google Cloud Console project (for OAuth)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd upsc2025
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your Supabase credentials:
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+5. Open [http://localhost:5173](http://localhost:5173) in your browser
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Base UI components (buttons, inputs, etc.)
+│   ├── GoogleLoginButton.tsx  # Google OAuth button component
+│   └── Navbar.tsx      # Navigation component
+├── hooks/              # Custom React hooks
+│   ├── useAuth.ts      # Authentication state management
+│   └── useToast.ts     # Toast notifications
+├── lib/                # Utility libraries
+│   └── supabase.ts     # Supabase client configuration
+├── pages/              # Page components
+│   ├── AuthCallback.tsx # OAuth callback handler
+│   ├── LoginPage.tsx   # Login page
+│   └── RegisterPage.tsx # Registration page
+└── App.tsx             # Main application component
+```
+
+## Authentication Flow
+
+1. **Login/Register Pages**: Users can choose between email/password or Google OAuth
+2. **Google OAuth Flow**: 
+   - User clicks "Continue with Google"
+   - Redirected to Google consent screen
+   - After authorization, redirected to `/auth/callback`
+   - AuthCallback component handles the OAuth response
+   - User is redirected to home page on success
+3. **Session Management**: The `useAuth` hook manages authentication state across the app
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+### Adding New Features
+
+1. Create new components in `src/components/`
+2. Add new pages in `src/pages/`
+3. Create custom hooks in `src/hooks/` for reusable logic
+4. Update routing in `src/App.tsx`
+
+## Deployment
+
+1. Build the application:
+```bash
+npm run build
+```
+
+2. Deploy to your preferred hosting platform (Vercel, Netlify, etc.)
+
+3. Update environment variables in your hosting platform
+
+4. Configure Google OAuth redirect URLs for your production domain
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
