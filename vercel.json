@@ -6,6 +6,12 @@
     },
     {
       "source": "/(.*)",
+      "has": [
+        {
+          "type": "missing",
+          "missing": true
+        }
+      ],
       "destination": "/index.html"
     }
   ],
