@@ -34,7 +34,7 @@ This guide will help you set up Google OAuth authentication for your UPSC applic
 3. Choose "Web application"
 4. Set the following redirect URIs:
    - For local development: `http://localhost:5173/auth/callback`
-   - For production: `https://yourdomain.com/auth/callback`
+   - For production: `https://upsc-website-hypx.vercel.app/auth/callback`
    - Supabase callback: `https://your-project-ref.supabase.co/auth/v1/callback`
 5. Note down the **Client ID** and **Client Secret**
 
@@ -51,12 +51,12 @@ This guide will help you set up Google OAuth authentication for your UPSC applic
 1. In Supabase dashboard, go to "Authentication" > "Settings"
 2. Set the Site URL to your application URL:
    - Local: `http://localhost:5173`
-   - Production: `https://yourdomain.com`
+   - Production: `https://upsc-website-hypx.vercel.app`
 
 ### 2.3 Configure Redirect URLs
 1. In the same settings page, add redirect URLs:
    - `http://localhost:5173/auth/callback` (for local development)
-   - `https://yourdomain.com/auth/callback` (for production)
+   - `https://upsc-website-hypx.vercel.app/auth/callback` (for production)
 
 ## Step 3: Environment Variables
 
@@ -94,6 +94,12 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 4. **Redirect loop**
    - Ensure the auth callback route is properly configured
    - Check that the redirect URLs in Supabase match your app URLs
+
+5. **Redirecting to CSS/JS files instead of callback route (Vercel)**
+   - This happens when Vercel doesn't know how to handle SPA routes
+   - Solution: Add a `vercel.json` file with proper rewrites (already included in this project)
+   - Ensure the `vercel.json` file is deployed with your application
+   - Redeploy your application after adding the `vercel.json` file
 
 ### Debug Steps
 

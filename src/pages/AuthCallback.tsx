@@ -1,40 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/contexts/AuthContext'
 
 const AuthCallback = () => {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
-  const toast = useToast()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          throw error
-        }
+      // Wait for auth to be initialized
+      if (authLoading) return
 
-        if (data.session) {
-          toast.success('Successfully authenticated!')
-          navigate('/')
-        } else {
-          toast.error('Authentication failed')
-          navigate('/login')
-        }
-      } catch (err: any) {
-        console.error('Auth callback error:', err)
-        toast.error(err.message || 'Authentication failed')
+      if (user) {
+        navigate('/')
+      } else {
         navigate('/login')
-      } finally {
-        setLoading(false)
       }
+      setLoading(false)
     }
 
     handleAuthCallback()
-  }, [navigate, toast])
+  }, [navigate, user, authLoading])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

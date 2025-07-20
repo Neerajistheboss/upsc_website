@@ -1,26 +1,24 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/contexts/AuthContext'
 import GoogleLoginButton from '@/components/GoogleLoginButton'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const toast = useToast()
+  const { signIn } = useAuth()
   const navigate = useNavigate()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
-      toast.success('Logged in successfully!')
+      await signIn(email, password)
       navigate('/')
     } catch (err: any) {
-      toast.error(err.message || 'Login failed')
+      // Error handling is already done in the context
+      console.error('Login error:', err)
     } finally {
       setLoading(false)
     }

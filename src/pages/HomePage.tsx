@@ -3,11 +3,13 @@ import { Handshake } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import GoogleLoginButton from '@/components/GoogleLoginButton'
+import { useIsLoggedIn } from '@/contexts/AuthContext'
 
 const HomePage = () => {
   const [visitorCount, setVisitorCount] = useState<number | null>(null)
   const [loadingVisitor, setLoadingVisitor] = useState(true)
-
+  const isLoggedIn= useIsLoggedIn()
   useEffect(() => {
     const incrementVisitor = async () => {
       setLoadingVisitor(true)
@@ -35,6 +37,12 @@ const HomePage = () => {
             Access previous year papers, study materials, and practice tests all in one place.
           </p>
         </div>
+        {!isLoggedIn && (
+          <div className='w-fit mx-auto my-4'>
+            <GoogleLoginButton loginText='Login with Google'/>
+          </div>
+        )}
+        
 
         {/* Quick Actions */}
         <div className="flex flex-col md:flex-row items-stretch gap-6 mb-12">

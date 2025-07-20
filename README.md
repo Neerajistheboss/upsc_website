@@ -208,7 +208,41 @@ src/
    - After authorization, redirected to `/auth/callback`
    - AuthCallback component handles the OAuth response
    - User is redirected to home page on success
-3. **Session Management**: The `useAuth` hook manages authentication state across the app
+3. **Session Management**: The `AuthContext` manages authentication state across the app
+
+## Using the AuthContext
+
+The application uses React Context for centralized authentication state management:
+
+### Basic Usage
+
+```tsx
+import { useAuth, useIsLoggedIn, useUser } from '@/contexts/AuthContext'
+
+function MyComponent() {
+  const { isLoggedIn, user, signOut } = useAuth()
+  
+  if (isLoggedIn) {
+    return <div>Welcome, {user?.email}!</div>
+  }
+  
+  return <div>Please log in</div>
+}
+```
+
+### Available Hooks
+
+- **`useAuth()`**: Full authentication context with all methods
+- **`useIsLoggedIn()`**: Boolean indicating if user is logged in
+- **`useUser()`**: Current user object or null
+- **`useAuthLoading()`**: Boolean indicating if auth is loading
+
+### Available Methods
+
+- **`signIn(email, password)`**: Email/password login
+- **`signUp(email, password, phone?)`**: Email/password registration
+- **`signOut()`**: Logout user
+- **`signInWithGoogle()`**: Google OAuth login
 
 ## Development
 

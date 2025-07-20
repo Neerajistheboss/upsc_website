@@ -53,7 +53,7 @@ const PWAInstallButton = () => {
   if (!showInstallButton) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="md:absolute bottom-4 right-4 animate-bounce">
       <button
         onClick={handleInstallClick}
         className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 transition-colors flex items-center space-x-2"

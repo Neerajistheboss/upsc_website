@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/contexts/AuthContext'
 import { z } from 'zod'
 import GoogleLoginButton from '@/components/GoogleLoginButton'
 
@@ -24,7 +23,7 @@ const RegisterPage = () => {
   const [form, setForm] = useState({ email: '', phone: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
   const [loading, setLoading] = useState(false)
-  const toast = useToast()
+  const { signUp } = useAuth()
   const navigate = useNavigate()
 
   const validate = () => {
@@ -79,23 +78,20 @@ const RegisterPage = () => {
     const fieldErrors = validate()
     if (Object.keys(fieldErrors).length > 0) {
       const firstError = Object.values(fieldErrors)[0]
-      if (firstError) toast.error(firstError)
+      if (firstError) {
+        // We'll handle this error display differently since we don't have toast here
+        console.error(firstError)
+        return
+      }
       return
     }
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: { phone: form.phone }
-        }
-      })
-      if (error) throw error
-      toast.success('Signup successful! Please check your email to verify.')
+      await signUp(form.email, form.password, form.phone)
       navigate('/login')
     } catch (err: any) {
-      toast.error(err.message || 'Signup failed')
+      // Error handling is already done in the context
+      console.error('Signup error:', err)
     } finally {
       setLoading(false)
     }

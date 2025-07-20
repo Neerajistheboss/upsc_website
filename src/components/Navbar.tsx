@@ -13,9 +13,12 @@ import {
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import GoogleLoginButton from './GoogleLoginButton'
+import { User } from 'lucide-react'
+import PWAInstallButton from './PWAInstallButton'
+import { Separator } from './ui/separator'
 
 const THEME_OPTIONS = [
   { value: 'light', label: 'Light', icon: (
@@ -91,8 +94,10 @@ const ThemeDropdown = () => {
       >
         {current.icon}
         <span className="hidden md:inline text-sm">{current.label}</span>
+        Theme
         <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
+      
       {open && (
         <div className="absolute right-0 mt-2 w-40 bg-background border rounded shadow-lg z-50">
           {THEME_OPTIONS.map(opt => (
@@ -216,9 +221,7 @@ const UserMenu = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
           className="flex items-center justify-center w-9 h-9 rounded-full  text-primary font-bold text-lg border border-input hover:bg-primary/10 transition-colors"
           title={displayName}
         >
-          {initials || (
-            <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-          )}
+          {<User/>} 
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
@@ -246,7 +249,7 @@ const Navbar = () => {
     { href: "/pyq", label: "Previous Year Question Papers" },
     { href: "/current-affairs", label: "Current Affairs" },
     { href: "/species-in-news", label: "Species in News" },
-    { href: "/bookmarks", label: "My Bookmarks", icon: "bookmark" },
+    // { href: "/bookmarks", label: "My Bookmarks", icon: "bookmark" },
   ]
 
   const externalLinks = [
@@ -283,8 +286,9 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left side - Mobile menu button */}
-          <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center space-x-4 w-full">
             {/* Mobile menu button */}
+      <div className='flex'>
             <Drawer open={isOpen} onOpenChange={setIsOpen}>
               <DrawerTrigger asChild>
                 <button className="md:hidden p-2 rounded-md hover:bg-accent hover:text-accent-foreground">
@@ -311,13 +315,42 @@ const Navbar = () => {
                       Navigate through the application
                     </DrawerDescription>
                   </DrawerHeader>
+                   <div className="border-t pt-4 my-4 px-4 flex justify-between  ">
+                    <div className=''>
+
+                        {user ? (
+                          <div><Link to="/profile">
+                        <div onClick={() => setIsOpen(false)} className='flex  gap-2 mb-4'>
+                          <User /> My Profile
+                        </div>
+                      </Link>
+                      <Link to="/">
+                      <div onClick={()=>{signOut();setIsOpen(false)}}>Logout</div>
+                      </Link>
+                      </div>
+                        ) : (
+                          <div className='flex flex-col gap-2' onClick={()=>setIsOpen(false)}>
+                            <GoogleLoginButton loginText='Login With Google' />
+                            <Link to="/login" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
+                              Login With Email
+                            </Link>
+                            <Link to="/register" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
+                              Sign Up With Email
+                            </Link>
+                          </div>
+                        )}
+                        </div>
+                        <ThemeDropdown />
+                        
+                      </div>
+                      <Separator/>
                   <div className="p-4 pb-0">
                     <div className="space-y-4">
                       {navigationItems.map((item) => (
                         <DrawerClose asChild key={item.href}>
                           <Link
                             to={item.href}
-                            className="block text-lg font-medium transition-colors hover:text-primary py-2 flex items-center"
+                            className="block text-lg font-medium transition-colors hover:text-primary  flex items-center"
                           >
                             {item.icon === 'bookmark' && (
                               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,23 +361,7 @@ const Navbar = () => {
                           </Link>
                         </DrawerClose>
                       ))}
-                      <div className="pt-4 border-t">
-                        <ThemeDropdown />
-                        {user ? (
-                          <>
-                            <UserMenu user={user} onLogout={signOut} />
-                          </>
-                        ) : (
-                          <>
-                            <Link to="/login" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
-                              Login
-                            </Link>
-                            <Link to="/register" className="w-full block text-left text-sm font-medium transition-colors hover:text-primary py-2">
-                              Sign Up
-                            </Link>
-                          </>
-                        )}
-                      </div>
+                     
                       
                       {/* External Links Section */}
                       <div className="pt-4 border-t">
@@ -408,12 +425,16 @@ const Navbar = () => {
             {/* Logo/Brand */}
             <Link to="/">
             <div className="flex items-center space-x-2">
-              <div className="h-8 rounded-lg bg-primary text-white  flex items-center justify-center px-2">
-              UPSC
-           
+              <div className="h-8 rounded-lg   flex items-center justify-center px-2">
+              Upsc Community
+
               </div>
             </div>
             </Link>
+
+           </div>
+                      <div className='md:hidden'> <PWAInstallButton/></div>
+           
           </div>
 
           {/* Navigation Links - Desktop */}
