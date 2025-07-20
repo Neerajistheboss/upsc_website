@@ -1,17 +1,12 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/auth/callback",
       "destination": "/index.html"
     },
     {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "missing",
-          "missing": true
-        }
-      ],
+      "source": "/((?!assets/|favicon.ico|robots.txt|manifest.json|.*\\.js|.*\\.css|.*\\.png|.*\\.jpg|.*\\.svg).*)",
       "destination": "/index.html"
     }
   ],
@@ -37,4 +32,4 @@
   ],
   "buildCommand": "npm run build",
   "outputDirectory": "dist"
-} 
+}
