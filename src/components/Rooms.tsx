@@ -66,6 +66,7 @@ const Rooms: React.FC = () => {
   const [showShare, setShowShare] = useState(false);
   const [roomTab, setRoomTab] = useState<'public' | 'private'>('public');
   const [roomNameAvailable, setRoomNameAvailable] = useState<null | boolean>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -189,6 +190,7 @@ const Rooms: React.FC = () => {
     setNewRoomName('');
     setNewRoomPassword('');
     setRoomSuccess('Room created!');
+    setDialogOpen(false);
     setTimeout(() => setRoomSuccess(''), 2000);
   };
 
@@ -286,7 +288,7 @@ const Rooms: React.FC = () => {
               Private Rooms
             </button>
           </div>
-          <Dialog>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <button className="w-full mb-2 bg-primary text-primary-foreground px-4 py-2 rounded-md font-semibold">+ Create Room</button>
             </DialogTrigger>
@@ -343,10 +345,12 @@ const Rooms: React.FC = () => {
                   .map(room => (
                     <li key={room.id}>
                       <div
-                        className={`flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
+                        className={`border flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
                        
                       >
-                        {room.name}
+                        <div className='flex items-center justify-between w-full'>
+                          {room.name}
+                          </div>
                         <div className='flex items-center justify-between w-full'>
                           <div  onClick={() => handleJoinRoom(room)} className='hover:cursor-pointer flex items-center justify-between w-full'>
                             <div>
