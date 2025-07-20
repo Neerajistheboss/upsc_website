@@ -6,7 +6,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!assets/|favicon.ico|robots.txt|manifest.json|.*\\.js|.*\\.css|.*\\.png|.*\\.jpg|.*\\.svg).*)",
+      "source": "/((?!assets/|.*\\.js|.*\\.css|.*\\.ico|.*\\.png|.*\\.svg|.*\\.txt|.*\\.json).*)",
       "destination": "/index.html"
     }
   ],
