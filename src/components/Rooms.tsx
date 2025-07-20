@@ -1,78 +1,152 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import {
+  getDatabase,
+  ref,
+  push,
+  set,
+  onValue,
+  off,
+  serverTimestamp,
+  update,
+  DataSnapshot,
+} from 'firebase/database';
 
-// Types for props
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+// --- Firebase config from .env ---
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
 
+// Initialize Firebase app only once
+const app = initializeApp(firebaseConfig);
+console.log('firebaseConfig', app)
+const db = getDatabase(app);
+console.log('db', db)
 
-const Rooms: React.FC = ({}) => {
- 
-  const { user } = useAuth();
-  // Local state and refs
+// --- Types ---
+type Room = {
+  id: string;
+  name: string;
+};
+
+type Message = {
+  id: string;
+  user: string;
+  content: string;
+  createdAt: number;
+};
+
+const Rooms: React.FC = () => {
+  // Room state
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [displayNamePrompt, setDisplayNamePrompt] = useState(false);
+
   const messageInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newRoomName, setNewRoomName] = useState('');
-  const [messageText, setMessageText] = useState('');
-  const [roomDisplayNames, setRoomDisplayNames] = useState<{ [roomId: string]: string }>({});
-  const [pendingRoom, setPendingRoom] = useState<null | Room>(null);
-  const [displayNameInput, setDisplayNameInput] = useState('');
 
-  // Handle sending a message
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!messageText.trim() || !currentRoom || !user) return;
-    const optimisticMsg = {
-      id: 'optimistic-' + Date.now(),
-      room_id: currentRoom.id,
-      user_id: user.id,
-      content: messageText.trim(),
-      created_at: new Date().toISOString(),
-      user_display_name: roomDisplayNames[currentRoom.id] || user.email || 'You',
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
-    setMessageText('');
-    if (messageInputRef.current) messageInputRef.current.focus();
-    await sendMessage(optimisticMsg.content);
-  };
+  // --- Fetch rooms in realtime ---
+  useEffect(() => {
+    const roomsRef = ref(db, 'rooms');
+    const handle = onValue(roomsRef, (snapshot: DataSnapshot) => {
+      const data = snapshot.val() || {};
+      const roomList = Object.entries(data).map(([id, value]: any) => ({
+        id,
+        name: value.name,
+      }));
+      setRooms(roomList);
+    });
+    return () => off(roomsRef, 'value', handle);
+  }, []);
 
-  // Handle creating a room
+  // --- Fetch messages for current room in realtime ---
+  useEffect(() => {
+    if (!currentRoom) {
+      setMessages([]);
+      return;
+    }
+    const messagesRef = ref(db, `messages/${currentRoom.id}`);
+    const handle = onValue(messagesRef, (snapshot: DataSnapshot) => {
+      const data = snapshot.val() || {};
+      const msgList = Object.entries(data).map(([id, value]: any) => ({
+        id,
+        user: value.user,
+        content: value.content,
+        createdAt: value.createdAt,
+      }));
+      // Sort by createdAt
+      msgList.sort((a, b) => a.createdAt - b.createdAt);
+      setMessages(msgList);
+    });
+    return () => off(messagesRef, 'value', handle);
+  }, [currentRoom]);
+
+  // --- Auto-scroll chat ---
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // --- Room creation ---
   const handleCreateRoom = async (e: React.FormEvent) => {
+    console.log('handleCreateRoom', newRoomName)
     e.preventDefault();
     if (!newRoomName.trim()) return;
-    await createRoom(newRoomName.trim());
+    const roomsRef = ref(db, 'rooms');
+    const newRoomRef = push(roomsRef);
+    await set(newRoomRef, { name: newRoomName.trim() });
     setNewRoomName('');
   };
 
-  // When user clicks a room, prompt for display name if not set
+  // --- Join room ---
   const handleJoinRoom = (room: Room) => {
-    if (!user) {
-      toast.warning('Please log in to join a room');
-      return;
-    }
-    console.log('roomDisplayNames', roomDisplayNames)
-    if (!roomDisplayNames[room.id]) {
-      setPendingRoom(room);
-      setDisplayNameInput('');
+    if (!displayName) {
+      setDisplayNamePrompt(true);
+      setCurrentRoom(room);
     } else {
-      joinRoom(room);
+      setCurrentRoom(room);
     }
   };
 
-  // When user submits display name, join the room
+  // --- Set display name and join room ---
   const handleSetDisplayName = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pendingRoom || !displayNameInput.trim()) return;
-    setRoomDisplayNames(prev => ({ ...prev, [pendingRoom.id]: displayNameInput.trim() }));
-    joinRoom(pendingRoom);
-    setPendingRoom(null);
-    setDisplayNameInput('');
+    if (!displayName.trim()) return;
+    setDisplayNamePrompt(false);
+  };
+
+  // --- Send message ---
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim() || !currentRoom || !displayName) return;
+    const messagesRef = ref(db, `messages/${currentRoom.id}`);
+    const newMsgRef = push(messagesRef);
+    await set(newMsgRef, {
+      user: displayName,
+      content: messageText.trim(),
+      createdAt: Date.now(),
+    });
+    setMessageText('');
+    if (messageInputRef.current) messageInputRef.current.focus();
   };
 
   return (
     <div className="py-8">
-      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><MessageSquare className="w-6 h-6" /> Chat Rooms</h2>
+      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase)</h2>
       <div className="grid md:grid-cols-3 gap-8">
         {/* Room List and Create Room */}
         <div className="md:col-span-1 space-y-6">
@@ -88,28 +162,20 @@ const Rooms: React.FC = ({}) => {
           </form>
           <div className="bg-card border rounded-lg p-4 max-h-96 overflow-y-auto">
             <h3 className="font-semibold mb-2">Available Rooms</h3>
-            {loadingRooms ? (
-              <div className="text-muted-foreground">Loading rooms...</div>
-            ) : rooms.length === 0 ? (
+            {rooms.length === 0 ? (
               <div className="text-muted-foreground">No rooms yet. Create one!</div>
             ) : (
               <ul className="space-y-2">
-                {rooms.map(room => {
-                  const presence = roomPresence[room.id];
-                  return (
-                    <li key={room.id}>
-                      <button
-                        className={`w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
-                        onClick={() => handleJoinRoom(room)}
-                      >
-                        {room.name}
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {presence ? `${presence.count} user${presence.count !== 1 ? 's' : ''} online` : '0 users online'}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {rooms.map(room => (
+                  <li key={room.id}>
+                    <button
+                      className={`w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
+                      onClick={() => handleJoinRoom(room)}
+                    >
+                      {room.name}
+                    </button>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
@@ -117,21 +183,21 @@ const Rooms: React.FC = ({}) => {
         {/* Chat UI */}
         <div className="md:col-span-2">
           {/* Display name prompt modal */}
-          {pendingRoom && (
+          {displayNamePrompt && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <form onSubmit={handleSetDisplayName} className="bg-background rounded-lg shadow-lg p-6 w-full max-w-sm relative">
-                <h3 className="text-lg font-semibold mb-4 text-center">Enter a display name for <span className='text-primary'>{pendingRoom.name}</span></h3>
+                <h3 className="text-lg font-semibold mb-4 text-center">Enter a display name to join <span className='text-primary'>{currentRoom?.name}</span></h3>
                 <input
                   type="text"
-                  value={displayNameInput}
-                  onChange={e => setDisplayNameInput(e.target.value)}
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
                   placeholder="Your name in this room..."
                   className="w-full px-3 py-2 border rounded-md bg-background text-foreground mb-4"
                   autoFocus
                   maxLength={32}
                 />
                 <div className="flex gap-2 justify-end">
-                  <button type="button" className="px-4 py-2 rounded-md bg-muted text-foreground" onClick={() => setPendingRoom(null)}>Cancel</button>
+                  <button type="button" className="px-4 py-2 rounded-md bg-muted text-foreground" onClick={() => setDisplayNamePrompt(false)}>Cancel</button>
                   <button type="submit" className="px-4 py-2 rounded-md bg-primary text-primary-foreground">Join</button>
                 </div>
               </form>
@@ -144,17 +210,15 @@ const Rooms: React.FC = ({}) => {
                 <button className="text-sm text-muted-foreground hover:text-primary" onClick={() => setCurrentRoom(null)}>Leave</button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
-                {loadingMessages && messages.length === 0 ? (
-                  <div className="text-muted-foreground">Loading messages...</div>
-                ) : messages.length === 0 ? (
+                {messages.length === 0 ? (
                   <div className="text-muted-foreground">No messages yet. Start the conversation!</div>
                 ) : (
                   messages.map(msg => (
-                    <div key={msg.id} className={`flex ${msg.user_id === user?.id ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.user_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                        <div className="text-xs font-medium mb-1">{msg.user_display_name || roomDisplayNames[msg.room_id] || msg.user_id}</div>
+                    <div key={msg.id} className={`flex ${msg.user === displayName ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.user === displayName ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                        <div className="text-xs font-medium mb-1">{msg.user}</div>
                         <div>{msg.content}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1 text-right">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1 text-right">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
                     </div>
                   ))
