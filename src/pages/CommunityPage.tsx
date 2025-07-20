@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { usePublicProfiles } from '@/hooks/usePublicProfiles'
 import PublicProfileCard from '@/components/PublicProfileCard'
-import { Search, Users, Filter } from 'lucide-react'
+import { FriendsTab } from '@/components/FriendsTab'
+import { Search, Users, Filter, UserPlus } from 'lucide-react'
 
 const CommunityPage = () => {
   const { users, loading, error, searchProfiles, filterByExpertSubject } = usePublicProfiles()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
+  const [activeTab, setActiveTab] = useState<'community' | 'friends'>('community')
 
   // Debug logging
   console.log('CommunityPage - users:', users.length)
@@ -84,8 +86,38 @@ const CommunityPage = () => {
           </p>
         </div>
 
-        {/* Search and Filter Controls */}
-        <div className="mb-8 space-y-6">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-border mb-6">
+          <button
+            onClick={() => setActiveTab('community')}
+            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${
+              activeTab === 'community'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Discover
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('friends')}
+            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${
+              activeTab === 'friends'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <UserPlus className="w-4 h-4" />
+            Friends
+          </button>
+        </div>
+
+        {/* Community Tab Content */}
+        {activeTab === 'community' && (
+          <>
+            {/* Search and Filter Controls */}
+            <div className="mb-8 space-y-6">
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="relative">
             <div className="relative">
@@ -198,6 +230,13 @@ const CommunityPage = () => {
               </button>
             )}
           </div>
+        )}
+          </>
+        )}
+
+        {/* Friends Tab Content */}
+        {activeTab === 'friends' && (
+          <FriendsTab />
         )}
       </div>
     </div>

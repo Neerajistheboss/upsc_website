@@ -1,5 +1,6 @@
 import React from 'react'
 import { User } from 'lucide-react'
+import { ConnectButton } from '@/components/ConnectButton'
 
 interface PublicProfileCardProps {
   user: {
@@ -95,9 +96,11 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
             <button className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium py-2 px-3 rounded-lg transition-colors duration-200">
               View Profile
             </button>
-            <button className="flex-1 bg-secondary/10 hover:bg-secondary/20 text-secondary-foreground text-xs font-medium py-2 px-3 rounded-lg transition-colors duration-200">
-              Connect
-            </button>
+            <ConnectButton 
+              targetUserId={user.id}
+              targetUserName={displayName}
+              className="flex-1"
+            />
           </div>
         </div>
       </div>
