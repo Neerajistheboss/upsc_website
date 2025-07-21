@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/useToast';
 import { usePYQData } from '@/hooks/usePYQData';
@@ -18,6 +18,8 @@ const QuestionPaperUpload = () => {
     answerKeyFile: null as File | null,
   });
   const [uploading, setUploading] = useState(false);
+  const questionPaperInputRef = useRef<HTMLInputElement>(null);
+  const answerKeyInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, files } = e.target as any;
@@ -76,6 +78,9 @@ const QuestionPaperUpload = () => {
         questionPaperFile: null,
         answerKeyFile: null,
       });
+      // Clear file input fields
+      if (questionPaperInputRef.current) questionPaperInputRef.current.value = '';
+      if (answerKeyInputRef.current) answerKeyInputRef.current.value = '';
     } catch (err: any) {
       toast.error('Upload failed', err.message || '');
     } finally {
@@ -152,6 +157,7 @@ const QuestionPaperUpload = () => {
               accept="application/pdf"
               required
               onChange={handleChange}
+              ref={questionPaperInputRef}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -164,6 +170,7 @@ const QuestionPaperUpload = () => {
               accept="application/pdf"
               required
               onChange={handleChange}
+              ref={answerKeyInputRef}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>

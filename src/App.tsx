@@ -22,6 +22,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import PWAInstallButton from '@/components/PWAInstallButton'
+import AdminRoute from '@/components/AdminRoute'
 
 function App() {
   return (
@@ -35,13 +36,13 @@ function App() {
               <Route path="/pyq" element={<PYQPage />} />
               <Route path="/question-paper/:year/:paper" element={<QuestionPaperViewer />} />
               <Route path="/answer-key/:year/:paper" element={<AnswerKeyViewer />} />
-              <Route path="/admin/pdf-urls" element={<PDFUrlManager />} />
+              <Route path="/admin/pdf-urls" element={<AdminRoute><PDFUrlManager /></AdminRoute>} />
               <Route path="/current-affairs" element={<CurrentAffairsPage />} />
               <Route path="/species-in-news" element={<SpeciesInNewsPage />} />
               <Route path="/bookmarks" element={<BookmarksPage />} />
-              <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
-              <Route path="/admin/species" element={<SpeciesManagementPage />} />
-              <Route path="/admin/upload-question-paper" element={<QuestionPaperUpload />} />
+              <Route path="/admin/current-affairs" element={<AdminRoute><CurrentAffairsUpload /></AdminRoute>} />
+              <Route path="/admin/species" element={<AdminRoute><SpeciesManagementPage /></AdminRoute>} />
+              <Route path="/admin/upload-question-paper" element={<AdminRoute><QuestionPaperUpload /></AdminRoute>} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />

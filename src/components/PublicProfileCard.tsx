@@ -21,8 +21,18 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   user, 
   showDetails = false
 }) => {
-  const displayName = user.display_name || user.email?.split('@')[0] || 'User'
-  const photoUrl = user.photo_url
+  function maskString(str: string) {
+    if (str.length <= 5) return str; // Nothing to mask
+    const start = str.slice(0, 5);
+    const end = str.slice(-2);
+    const masked = '*'.repeat(str.length - 5);
+    return `${start}${masked}${end}`;
+  }
+  const displayName = maskString(user.display_name || ''  ) || maskString(user.email || ''  ) || 'User'
+  
+  const photoUrl = user.photo_url || 'https://github.com/shadcn.png'
+  console.log(user.display_name, user.email)
+  console.log(photoUrl)
 
   console.log('RENDERING PUBLIC PROFILE CARD')
 
@@ -38,7 +48,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-0.5">
               {/* If user has a photo_url (Google login or uploaded), show it. Otherwise, show default icon. */}
-              {user.photo_url ? (
+              {photoUrl ? (
                 <img 
                   src={user.photo_url} 
                   alt={displayName} 

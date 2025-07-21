@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const toast = useToast()
 
   const isLoggedIn = !!user
+  const wasLoggedIn = useRef(false)
 
   useEffect(() => {
     // Get initial session
@@ -36,6 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession()
         setSession(session)
         setUser(session?.user ?? null)
+        wasLoggedIn.current = !!session?.user
       } catch (error) {
         console.error('Error getting initial session:', error)
       } finally {
@@ -54,41 +56,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Show appropriate toast messages
         if (event === 'SIGNED_IN') {
-          toast.success('Successfully logged in!')
-          
-                  // For new Google OAuth users, set publicAccount to true by default and sync to public_profiles
-        if (session?.user && event === 'SIGNED_IN' && session.user.app_metadata?.provider === 'google') {
-          const currentMetadata = session.user.user_metadata || {}
-          if (currentMetadata.publicAccount === undefined) {
-            try {
-              // Update user metadata
-              await supabase.auth.updateUser({
-                data: {
-                  ...currentMetadata,
-                  publicAccount: true
-                }
-              })
-              
-              // Add to public_profiles table
-              await supabase
-                .from('public_profiles')
-                .upsert({
-                  id: session.user.id,
-                  email: session.user.email,
-                  display_name: currentMetadata.displayName || session.user.email?.split('@')[0],
-                  about: currentMetadata.about || '',
-                  expert_subject: currentMetadata.expertSubject || '',
-                  target_year: currentMetadata.targetYear || '',
-                  preparing_since: currentMetadata.preparingSince || '',
-                  photo_url: currentMetadata.photoUrl || ''
-                }, { onConflict: 'id' })
-            } catch (error) {
-              console.error('Error setting default public account for Google user:', error)
+          if (!wasLoggedIn.current) {
+            toast.success('Successfully logged in!')
+          }
+          wasLoggedIn.current = true;
+          // For new Google OAuth users, set publicAccount to true by default and sync to public_profiles
+          if (session?.user && event === 'SIGNED_IN' && session.user.app_metadata?.provider === 'google') {
+            const currentMetadata = session.user.user_metadata || {}
+            if (currentMetadata.publicAccount === undefined) {
+              try {
+                // Update user metadata
+                await supabase.auth.updateUser({
+                  data: {
+                    ...currentMetadata,
+                    publicAccount: true
+                  }
+                })
+                // Add to public_profiles table
+                await supabase
+  .from('public_profiles')
+  .upsert({
+    id: session.user.id,
+    email: session.user.email,
+    display_name: currentMetadata.displayName || session.user.email?.split('@')[0],
+    about: currentMetadata.about || '',
+    expert_subject: currentMetadata.expertSubject || '',
+    target_year: currentMetadata.targetYear || '',
+    preparing_since: currentMetadata.preparingSince || '',
+    photo_url: currentMetadata.photoUrl || currentMetadata.avatar_url || currentMetadata.picture || ''
+  }, { onConflict: 'id' })
+              } catch (error) {
+                console.error('Error setting default public account for Google user:', error)
+              }
             }
           }
-        }
         } else if (event === 'SIGNED_OUT') {
           toast.success('Successfully logged out!')
+          wasLoggedIn.current = false;
         }
       }
     )
