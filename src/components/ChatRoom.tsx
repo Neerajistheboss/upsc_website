@@ -54,7 +54,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
     <div className="flex flex-col flex-1 bg-card border rounded-lg p-4">
       <div
         ref={parentRef}
-        className="h-[60vh] overflow-y-auto bg-background/50"
+        className="h-[57vh] overflow-y-auto bg-background/50"
         style={{ position: 'relative', contain: 'strict' }}
       >
         <div
@@ -75,14 +75,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
           >
             {items.map((virtualRow) => {
               const msg = messages[virtualRow.index];
+              const isMine = msg.user === displayName;
               return (
                 <div
                   key={virtualRow.key}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  className={`flex ${msg.user === displayName ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className="max-w-xs px-4 py-2 rounded-lg mb-4 bg-background text-foreground border">
+                  <div className={`max-w-xs px-4 py-2 rounded-lg mb-4 border ${isMine ? 'bg-primary/90 text-primary-foreground' : 'bg-background text-foreground'}`}>
                     <div className="text-xs font-medium mb-1">{msg.user}</div>
                     <div>{msg.content}</div>
                     <div className="text-[10px] text-muted-foreground mt-1 text-right">

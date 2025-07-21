@@ -248,10 +248,15 @@ const Rooms: React.FC = () => {
       setRoomError('Incorrect password.');
       return;
     }
-    setCurrentRoom(roomToJoin);
+    if (!displayName) {
+      setDisplayNamePrompt(true);
+      setCurrentRoom(roomToJoin);
+    } else {
+      setCurrentRoom(roomToJoin);
+      setShowShare(true);
+    }
     setRoomToJoin(null);
     setJoinPassword('');
-    setShowShare(true);
   };
 
   // --- Share link logic ---
@@ -406,20 +411,26 @@ const Rooms: React.FC = () => {
             </div>
           )} */}
           {currentRoom ? (
-            <ChatRoom
-              messages={messages}
-              displayName={displayName}
-              messageText={messageText}
-              setMessageText={setMessageText}
-              handleSendMessage={handleSendMessage}
-              typingUsers={typingUsers}
-              userId={userId}
-              parentRef={parentRef}
-              virtualizer={virtualizer}
-              messageInputRef={messageInputRef}
-              chatEndRef={chatEndRef}
-              setTyping={setTyping}
-            />
+            <>
+              <div className="p-4 border-b flex items-center justify-between">
+                <div className="font-semibold text-lg">Room: {currentRoom.name}</div>
+                <button className="text-sm text-muted-foreground hover:text-primary px-4 py-2 rounded-md bg-red-500 text-white" onClick={() => setCurrentRoom(null)}>Leave Room</button>
+              </div>
+              <ChatRoom
+                messages={messages}
+                displayName={displayName}
+                messageText={messageText}
+                setMessageText={setMessageText}
+                handleSendMessage={handleSendMessage}
+                typingUsers={typingUsers}
+                userId={userId}
+                parentRef={parentRef}
+                virtualizer={virtualizer}
+                messageInputRef={messageInputRef}
+                chatEndRef={chatEndRef}
+                setTyping={setTyping}
+              />
+            </>
           ) : (
             null
           )}
