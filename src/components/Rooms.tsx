@@ -16,6 +16,8 @@ import {
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import ChatRoom from './ChatRoom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 // --- Firebase config from .env ---
 const firebaseConfig = {
@@ -97,6 +99,13 @@ const Rooms: React.FC = () => {
     overscan: 8,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtered rooms based on search
+  const filteredRooms = rooms.filter(room =>
+    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // --- Fetch rooms in realtime ---
   useEffect(() => {
@@ -320,12 +329,66 @@ const Rooms: React.FC = () => {
         {/* Room List and Create Room */}
         <div className={`md:col-span-1 space-y-6 ${currentRoom ? 'hidden' : ''} md:block`}>
           <div className="bg-card border rounded-lg p-4  overflow-y-auto">
-            <h3 className="font-semibold mb-2">Available Rooms</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Available Rooms</h3>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="default">Create Room</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create a new room</DialogTitle>
+                    <DialogDescription>Room names must be unique. Password is optional.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateRoom} className="space-y-4">
+                    <Input
+                      type="text"
+                      placeholder="Room name"
+                      value={newRoomName}
+                      onChange={e => setNewRoomName(e.target.value)}
+                      maxLength={32}
+                      autoFocus
+                      required
+                      autoComplete='new-email'
+                    />
+                    {roomNameAvailable === false && (
+                      <div className="text-xs text-red-500">Room name already exists.</div>
+                    )}
+                    <Input
+                      type="password"
+                      placeholder="Password (optional)"
+                      value={newRoomPassword}
+                      onChange={e => setNewRoomPassword(e.target.value)}
+                      maxLength={32}
+                      autoComplete='new-password'
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                      <Button type="submit" variant="default" disabled={!newRoomName.trim() || roomNameAvailable === false}>Create</Button>
+                    </div>
+                    {roomError && <div className="text-xs text-red-500">{roomError}</div>}
+                    {roomSuccess && <div className="text-xs text-green-600">{roomSuccess}</div>}
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+            {/* Room search filter if more than 10 rooms */}
+            {rooms.length > 10 && (
+              <div className="mb-4">
+                <Input
+                  type="text"
+                  placeholder="Search rooms..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className=""
+                />
+              </div>
+            )}
             {rooms.length === 0 ? (
               <div className="text-muted-foreground">No rooms yet. Create one!</div>
             ) : (
               <ul className="space-y-2">
-                {rooms.map(room => (
+                {(rooms.length > 10 ? filteredRooms : rooms).map(room => (
                   <li key={room.id}>
                     <div
                        onClick={() => handleJoinRoom(room)} className={`hover:cursor-pointer border flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
@@ -424,10 +487,7 @@ const Rooms: React.FC = () => {
                 handleSendMessage={handleSendMessage}
                 typingUsers={typingUsers}
                 userId={userId}
-                parentRef={parentRef}
-                virtualizer={virtualizer}
-                messageInputRef={messageInputRef}
-                chatEndRef={chatEndRef}
+                messageInputRef={messageInputRef as React.RefObject<HTMLInputElement>}
                 setTyping={setTyping}
               />
             </>
