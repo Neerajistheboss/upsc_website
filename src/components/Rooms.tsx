@@ -14,6 +14,8 @@ import {
   onDisconnect,
 } from 'firebase/database';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import ChatRoom from './ChatRoom';
 
 // --- Firebase config from .env ---
 const firebaseConfig = {
@@ -86,6 +88,15 @@ const Rooms: React.FC = () => {
 
   // Unique user ID for presence
   const [userId] = useState(getOrCreateUserId());
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72, // keep as a fallback estimate, but allow dynamic measurement
+    overscan: 8,
+    measureElement: (el) => el.getBoundingClientRect().height,
+  });
 
   // --- Fetch rooms in realtime ---
   useEffect(() => {
@@ -395,59 +406,20 @@ const Rooms: React.FC = () => {
             </div>
           )} */}
           {currentRoom ? (
-            <div className="flex flex-col flex-1 bg-card border rounded-lg">
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="font-semibold text-lg">Room: {currentRoom.name}</div>
-                <button className="text-sm text-muted-foreground hover:text-primary px-4 py-2 rounded-md bg-red-500 text-white" onClick={() => setCurrentRoom(null)}>Leave Room</button>
-              </div>
-              <div className="h-[60vh] overflow-y-auto p-4 space-y-4 bg-background/50">
-                {messages.length === 0 ? (
-                  <div className="text-muted-foreground rounded-md p-4 text-center h-11/12 flex items-center justify-center">No messages yet. Start the conversation!</div>
-                ) : (
-                  messages.map(msg => (
-                    <div key={msg.id} className={`flex ${msg.user === displayName ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.user === displayName ? 'bg-primary/90 text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                        <div className="text-xs font-medium mb-1">{msg.user}</div>
-                        <div>{msg.content}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1 text-right">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-                {/* Typing indicator */}
-                {currentRoom && (
-                  <div className="min-h-[20px] px-4 text-xs text-muted-foreground" style={{height:'20px'}}>
-                    {Object.entries(typingUsers)
-                      .filter(([id]) => id !== userId)
-                      .map(([id, name]) => name)
-                      .slice(0, 3)
-                      .join(', ') +
-                      (Object.keys(typingUsers).filter(id => id !== userId).length > 0 ?
-                        (Object.keys(typingUsers).filter(id => id !== userId).length === 1 ? ' is typing...' : ' are typing...') :
-                        '')}
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-              <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2 bg-background">
-                <input
-                  ref={messageInputRef}
-                  type="text"
-                  value={messageText}
-                  onChange={e => {
-                    setMessageText(e.target.value);
-                    setTyping(true);
-                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => setTyping(false), 2000); // 2s after last keypress
-                  }}
-                  onBlur={() => setTyping(false)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-3 py-2 border rounded-md bg-background text-foreground"
-                  autoComplete="off"
-                />
-                <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md">Send</button>
-              </form>
-            </div>
+            <ChatRoom
+              messages={messages}
+              displayName={displayName}
+              messageText={messageText}
+              setMessageText={setMessageText}
+              handleSendMessage={handleSendMessage}
+              typingUsers={typingUsers}
+              userId={userId}
+              parentRef={parentRef}
+              virtualizer={virtualizer}
+              messageInputRef={messageInputRef}
+              chatEndRef={chatEndRef}
+              setTyping={setTyping}
+            />
           ) : (
             null
           )}
