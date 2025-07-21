@@ -308,7 +308,7 @@ const Rooms: React.FC = () => {
 
   return (
     <div className="flex-1 w-full flex flex-col ">
-      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+      <h2 className="text-2xl font-bold my-1 flex items-center gap-2">
         {/* <MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase) */}
         <span className="ml-4 text-base font-normal text-muted-foreground">
           Total online: 
@@ -354,7 +354,7 @@ const Rooms: React.FC = () => {
           </div>
         </div>
         {/* Chat UI */}
-        <div className={`w-full flex-1 flex flex-col ${currentRoom ? '' : 'md:col-span-2'}`}>
+        <div className={`md:col-span-2 flex-1 flex flex-col ${currentRoom ? '' : 'md:col-span-2'}`}>
           {/* Display name prompt modal */}
           {displayNamePrompt && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -412,7 +412,7 @@ const Rooms: React.FC = () => {
           )} */}
           {currentRoom ? (
             <>
-              <div className="p-4 border-b flex items-center justify-between">
+              <div className="p-1 flex items-center justify-between">
                 <div className="font-semibold text-lg">Room: {currentRoom.name}</div>
                 <button className="text-sm text-muted-foreground hover:text-primary px-4 py-2 rounded-md bg-red-500 text-white" onClick={() => setCurrentRoom(null)}>Leave Room</button>
               </div>

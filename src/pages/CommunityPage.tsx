@@ -59,7 +59,7 @@ const CommunityPage = () => {
         {/* <CommunityHeader /> */}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border mb-6 w-full overflow-x-hidden">
+        <div className="flex border-b border-border  w-full overflow-x-hidden">
           <button
             onClick={() => setActiveTab('community')}
             className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${

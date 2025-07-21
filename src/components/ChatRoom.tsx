@@ -51,10 +51,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
   }, [messages.length]);
 
   return (
-    <div className="flex flex-col flex-1 bg-card border rounded-lg p-4">
+    <div className="flex flex-col flex-1 bg-card border rounded-lg p-4 w-full">
       <div
         ref={parentRef}
-        className="h-[57vh] overflow-y-auto bg-background/50"
+        className="h-[57vh] flex-1 overflow-y-auto bg-background/50"
         style={{ position: 'relative', contain: 'strict' }}
       >
         <div
@@ -107,7 +107,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({
             (Object.keys(typingUsers).filter(id => id !== userId).length === 1 ? ' is typing...' : ' are typing...') :
             '')}
       </div>
-      <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2 bg-background">
+      <form onSubmit={handleSendMessage} className=" flex gap-2 bg-background">
         <input
           ref={messageInputRef}
           type="text"
