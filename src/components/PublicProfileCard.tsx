@@ -12,10 +12,13 @@ interface PublicProfileCardProps {
     target_year?: string
     preparing_since?: string
     photo_url?: string
+    photo_supabase_id?: string
     created_at?: string
   }
   showDetails?: boolean
 }
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
 const PublicProfileCard: React.FC<PublicProfileCardProps> = ({ 
   user, 
@@ -30,7 +33,13 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
   }
   const displayName = maskString(user.display_name || ''  ) || maskString(user.email || ''  ) || 'User'
   
-  const photoUrl = user.photo_url || 'https://github.com/shadcn.png'
+  let photoUrl = user.photo_url;
+  if (user.photo_supabase_id) {
+    // Construct the public URL for the profile-photos bucket
+    photoUrl = `${supabaseUrl}/storage/v1/object/public/profile-pics/${user.photo_supabase_id}`;
+    console.log(photoUrl)
+  }
+
   console.log(user.display_name, user.email)
   console.log(photoUrl)
 
@@ -50,7 +59,7 @@ const PublicProfileCard: React.FC<PublicProfileCardProps> = ({
               {/* If user has a photo_url (Google login or uploaded), show it. Otherwise, show default icon. */}
               {photoUrl ? (
                 <img 
-                  src={user.photo_url} 
+                  src={photoUrl} 
                   alt={displayName} 
                   className="w-full h-full rounded-full object-cover"
                 />
