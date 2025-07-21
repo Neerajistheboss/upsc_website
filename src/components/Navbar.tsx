@@ -279,7 +279,12 @@ const Navbar = () => {
       href: "/admin/species",
       label: "Manage Species",
       isInternal: true
-    }
+    },
+    {
+      href: "/admin/upload-question-paper",
+      label: "Upload Question Paper",
+      isInternal: true
+    },
   ]
 
 

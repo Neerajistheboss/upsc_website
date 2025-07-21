@@ -25,13 +25,7 @@ const AnswerKeyViewer = () => {
       }
       
       setLoading(false)
-      
-      // Set a timeout to detect if iframe fails to load
-      const timeout = setTimeout(() => {
-        setIframeFailed(true)
-      }, 5000) // 5 seconds timeout
-      
-      return () => clearTimeout(timeout)
+     
     }
   }, [year, paper, pyqData])
 

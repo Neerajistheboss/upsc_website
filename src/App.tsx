@@ -17,6 +17,7 @@ import AuthCallback from '@/pages/AuthCallback'
 import ProfilePage from '@/pages/ProfilePage'
 import CommunityPage from '@/pages/CommunityPage'
 import StudentsPage from '@/pages/StudentsPage'
+import QuestionPaperUpload from '@/pages/QuestionPaperUpload'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -40,6 +41,7 @@ function App() {
               <Route path="/bookmarks" element={<BookmarksPage />} />
               <Route path="/admin/current-affairs" element={<CurrentAffairsUpload />} />
               <Route path="/admin/species" element={<SpeciesManagementPage />} />
+              <Route path="/admin/upload-question-paper" element={<QuestionPaperUpload />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />

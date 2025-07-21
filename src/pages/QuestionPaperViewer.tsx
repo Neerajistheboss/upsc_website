@@ -9,6 +9,7 @@ const QuestionPaperViewer = () => {
   const [pdfUrl, setPdfUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [iframeFailed, setIframeFailed] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     if (year && paper && pyqData.length > 0) {
@@ -17,21 +18,14 @@ const QuestionPaperViewer = () => {
         p.year.toString() === year && p.paper === paper
       )
       
-      if (matchingPaper) {
+      if (matchingPaper && matchingPaper.question_paper_url) {
+        // Use the Supabase public URL directly
         setPdfUrl(matchingPaper.question_paper_url)
       } else {
-        // Fallback URL if not found
-        setPdfUrl(`https://upsc.gov.in/sites/default/files/QP_CS_P_${year}_English.pdf`)
+        setPdfUrl('') // No fallback, just empty if not found
       }
-      
       setLoading(false)
       
-      // Set a timeout to detect if iframe fails to load
-      const timeout = setTimeout(() => {
-        setIframeFailed(true)
-      }, 5000) // 5 seconds timeout
-      
-      return () => clearTimeout(timeout)
     }
   }, [year, paper, pyqData])
 
@@ -39,16 +33,26 @@ const QuestionPaperViewer = () => {
     navigate('/pyq')
   }
 
-  const handleDownload = () => {
-    const link = document.createElement('a')
-    link.href = pdfUrl
-    link.download = `UPSC_CSE_PRE_${year}_${paper}_Question_Paper.pdf`
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      const response = await fetch(pdfUrl, { mode: 'cors' })
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `UPSC_CSE_PRE_${year}_${paper}_Question_Paper.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error('Download failed:', error)
+    } finally {
+      setDownloading(false)
+    }
   }
-
+  
   if (dataLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -110,15 +114,15 @@ const QuestionPaperViewer = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+          
+
               <button
                 onClick={handleDownload}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download
+                {downloading ? 'Downloading...' : 'Download'}
               </button>
+          
             </div>
           </div>
         </div>
@@ -160,11 +164,24 @@ const QuestionPaperViewer = () => {
                 <button
                   onClick={handleDownload}
                   className="w-full border border-input bg-background hover:bg-accent px-4 py-2 rounded flex items-center justify-center space-x-2"
+                  disabled={downloading}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Download PDF
+                  {downloading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 mr-2 text-primary" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download PDFs
+                    </>
+                  )}
                 </button>
                 
                 <button

@@ -206,7 +206,7 @@ const PYQPage = () => {
                   Question Paper
                 </button>
                 <button 
-                  onClick={() => downloadFile(pyq.answerKeyUrl, `${pyq.title}_${pyq.paper}_Answer_Key.pdf`)}
+                  onClick={() => navigate(`/answer-key/${pyq.year}/${pyq.paper}`)}
                   className="px-3 py-2 border border-input hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
                 >
                   Answer Key
