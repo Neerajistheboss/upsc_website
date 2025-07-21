@@ -53,13 +53,13 @@ const CommunityPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-[calc(100vh-60px)] flex flex-col bg-background">
+      <div className="flex-1 flex flex-col w-screen mx-auto px-2">
         {/* Header */}
-        <CommunityHeader />
+        {/* <CommunityHeader /> */}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border mb-6">
+        <div className="flex border-b border-border mb-6 w-full overflow-x-hidden">
           <button
             onClick={() => setActiveTab('community')}
             className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${
@@ -73,7 +73,7 @@ const CommunityPage = () => {
           </button>
           <button
             onClick={() => setActiveTab('friends')}
-            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-2 py-3 border-b-2 transition-colors ${
               activeTab === 'friends'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'

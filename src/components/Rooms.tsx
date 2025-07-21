@@ -64,7 +64,6 @@ const Rooms: React.FC = () => {
   const [roomError, setRoomError] = useState('');
   const [roomSuccess, setRoomSuccess] = useState('');
   const [showShare, setShowShare] = useState(false);
-  const [roomTab, setRoomTab] = useState<'public' | 'private'>('public');
   const [roomNameAvailable, setRoomNameAvailable] = useState<null | boolean>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -77,6 +76,10 @@ const Rooms: React.FC = () => {
   // Presence state
   const [onlineCounts, setOnlineCounts] = useState<{ [roomId: string]: number }>({});
   const [totalOnline, setTotalOnline] = useState(0);
+
+  // Typing indicator state
+  const [typingUsers, setTypingUsers] = useState<{ [userId: string]: string }>({});
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const messageInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -172,6 +175,20 @@ const Rooms: React.FC = () => {
     setRoomNameAvailable(!exists);
   }, [newRoomName, rooms]);
 
+  // --- Listen for typing users in the current room ---
+  useEffect(() => {
+    if (!currentRoom) {
+      setTypingUsers({});
+      return;
+    }
+    const typingRef = ref(db, `typing/${currentRoom.id}`);
+    const handle = onValue(typingRef, (snapshot: DataSnapshot) => {
+      const data = snapshot.val() || {};
+      setTypingUsers(data);
+    });
+    return () => off(typingRef, 'value', handle);
+  }, [currentRoom]);
+
   // --- Room creation with unique name and password ---
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,6 +263,17 @@ const Rooms: React.FC = () => {
     setDisplayNamePrompt(false);
   };
 
+  // --- Helper to set typing state in Firebase ---
+  const setTyping = (isTyping: boolean) => {
+    if (!currentRoom || !userId || !displayName) return;
+    const typingRef = ref(db, `typing/${currentRoom.id}/${userId}`);
+    if (isTyping) {
+      set(typingRef, displayName);
+    } else {
+      set(typingRef, null);
+    }
+  };
+
   // --- Send message ---
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,122 +286,59 @@ const Rooms: React.FC = () => {
       createdAt: Date.now(),
     });
     setMessageText('');
+    setTyping(false); // Clear typing state on send
     if (messageInputRef.current) messageInputRef.current.focus();
   };
 
   return (
-    <div className="py-8">
+    <div className="flex-1 w-full flex flex-col ">
       <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        <MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase)
+        {/* <MessageSquare className="w-6 h-6" /> Chat Rooms (Firebase) */}
         <span className="ml-4 text-base font-normal text-muted-foreground">
           Total online: 
           <span className="inline-block w-2 h-2 rounded-full bg-green-500 mx-2 align-middle"></span>
           {totalOnline}
         </span>
       </h2>
-      {/* Tabs for Public/Private Rooms and Create Room Dialog */}
-      {!currentRoom && (
-        <>
-          <div className="flex gap-2 mb-4">
-            <button
-              className={`px-4 py-2 rounded-t-md border-b-2 transition-colors ${roomTab === 'public' ? 'border-primary text-primary bg-background' : 'border-transparent text-muted-foreground bg-muted'}`}
-              onClick={() => setRoomTab('public')}
-            >
-              Public Rooms
-            </button>
-            <button
-              className={`px-4 py-2 rounded-t-md border-b-2 transition-colors ${roomTab === 'private' ? 'border-primary text-primary bg-background' : 'border-transparent text-muted-foreground bg-muted'}`}
-              onClick={() => setRoomTab('private')}
-            >
-              Private Rooms
-            </button>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <button className="w-full mb-2 bg-primary text-primary-foreground px-4 py-2 rounded-md font-semibold">+ Create Room</button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create a New Room</DialogTitle>
-                <DialogDescription>Room names must be unique. Password is optional for private rooms.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateRoom} className="flex flex-col gap-2 mt-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newRoomName}
-                    onChange={e => setNewRoomName(e.target.value)}
-                    placeholder="Room name..."
-                    className="px-3 py-2 border rounded-md bg-background text-foreground w-full pr-8"
-                    autoFocus
-                    autoComplete="new-email"
-                  />
-                  {newRoomName && roomNameAvailable === true && (
-                    <CheckCircle className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500 w-5 h-5" />
-                  )}
-                  {newRoomName && roomNameAvailable === false && (
-                    <XCircle className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 w-5 h-5" />
-                  )}
-                </div>
-                <input
-                  type="password"
-                  value={newRoomPassword}
-                  onChange={e => setNewRoomPassword(e.target.value)}
-                  placeholder="Password (optional)"
-                  className="px-3 py-2 border rounded-md bg-background text-foreground"
-                  autoComplete="new-password"
-                />
-                <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md mt-2">Create</button>
-                {roomError && <div className="text-red-500 text-xs mt-1">{roomError}</div>}
-                {roomSuccess && <div className="text-green-600 text-xs mt-1">{roomSuccess}</div>}
-              </form>
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-3 gap-8 w-full flex-1">
         {/* Room List and Create Room */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-card border rounded-lg p-4 max-h-96 overflow-y-auto">
+        <div className={`md:col-span-1 space-y-6 ${currentRoom ? 'hidden' : ''} md:block`}>
+          <div className="bg-card border rounded-lg p-4  overflow-y-auto">
             <h3 className="font-semibold mb-2">Available Rooms</h3>
             {rooms.length === 0 ? (
               <div className="text-muted-foreground">No rooms yet. Create one!</div>
             ) : (
               <ul className="space-y-2">
-                {rooms
-                  .filter(room => roomTab === 'public' ? !room.password : !!room.password)
-                  .map(room => (
-                    <li key={room.id}>
-                      <div
-                        className={`border flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
-                       
-                      >
-                        <div className='flex items-center justify-between w-full'>
-                          {room.name}
+                {rooms.map(room => (
+                  <li key={room.id}>
+                    <div
+                       onClick={() => handleJoinRoom(room)} className={`hover:cursor-pointer border flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
+                    >
+                      <div className='flex items-center justify-between w-full'>
+                        {room.name}
+                      </div>
+                      <div className='flex items-center justify-between w-full'>
+                        <div  className='flex items-center justify-between w-full'>
+                          <div>
+                            {onlineCounts[room.id] > 0 && (
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
+                            )}
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {onlineCounts[room.id] || 0} online
+                            </span>
+                            {room.password && <span className="ml-2 text-xs text-yellow-600">🔒</span>}
                           </div>
-                        <div className='flex items-center justify-between w-full'>
-                          <div  onClick={() => handleJoinRoom(room)} className='hover:cursor-pointer flex items-center justify-between w-full'>
-                            <div>
-                          {onlineCounts[room.id] > 0 && (
-                            <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
-                          )}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {onlineCounts[room.id] || 0} online
-                          </span>
-                          {room.password && <span className="ml-2 text-xs text-yellow-600">🔒</span>}
-                          </div>
-                          </div>
-                      {/* <div className=' w-full hover:cursor-pointer  text-center'>Share</div> */}
                         </div>
                       </div>
-                    </li>
-                  ))}
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
         </div>
         {/* Chat UI */}
-        <div className="md:col-span-2">
+        <div className={`w-full flex-1 flex flex-col ${currentRoom ? '' : 'md:col-span-2'}`}>
           {/* Display name prompt modal */}
           {displayNamePrompt && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -430,12 +395,12 @@ const Rooms: React.FC = () => {
             </div>
           )} */}
           {currentRoom ? (
-            <div className="flex flex-col h-[32rem] bg-card border rounded-lg">
+            <div className="flex flex-col flex-1 bg-card border rounded-lg">
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="font-semibold text-lg">Room: {currentRoom.name}</div>
                 <button className="text-sm text-muted-foreground hover:text-primary px-4 py-2 rounded-md bg-red-500 text-white" onClick={() => setCurrentRoom(null)}>Leave Room</button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
+              <div className="h-[60vh] overflow-y-auto p-4 space-y-4 bg-background/50">
                 {messages.length === 0 ? (
                   <div className="text-muted-foreground rounded-md p-4 text-center h-11/12 flex items-center justify-center">No messages yet. Start the conversation!</div>
                 ) : (
@@ -449,6 +414,19 @@ const Rooms: React.FC = () => {
                     </div>
                   ))
                 )}
+                {/* Typing indicator */}
+                {currentRoom && (
+                  <div className="min-h-[20px] px-4 text-xs text-muted-foreground" style={{height:'20px'}}>
+                    {Object.entries(typingUsers)
+                      .filter(([id]) => id !== userId)
+                      .map(([id, name]) => name)
+                      .slice(0, 3)
+                      .join(', ') +
+                      (Object.keys(typingUsers).filter(id => id !== userId).length > 0 ?
+                        (Object.keys(typingUsers).filter(id => id !== userId).length === 1 ? ' is typing...' : ' are typing...') :
+                        '')}
+                  </div>
+                )}
                 <div ref={chatEndRef} />
               </div>
               <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2 bg-background">
@@ -456,7 +434,13 @@ const Rooms: React.FC = () => {
                   ref={messageInputRef}
                   type="text"
                   value={messageText}
-                  onChange={e => setMessageText(e.target.value)}
+                  onChange={e => {
+                    setMessageText(e.target.value);
+                    setTyping(true);
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => setTyping(false), 2000); // 2s after last keypress
+                  }}
+                  onBlur={() => setTyping(false)}
                   placeholder="Type your message..."
                   className="flex-1 px-3 py-2 border rounded-md bg-background text-foreground"
                   autoComplete="off"
