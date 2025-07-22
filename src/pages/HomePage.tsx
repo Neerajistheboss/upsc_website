@@ -46,7 +46,7 @@ const HomePage = () => {
         
 
         {/* Quick Actions */}
-        <div className="flex flex-col md:flex-row items-stretch gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-6 mb-12">
           
    
             {PreviousYearPapers}
@@ -66,7 +66,7 @@ const HomePage = () => {
 }
 
 const PreviousYearPapers=<Link to="/pyq">
-<div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+<div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer h-50">
   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
     <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -77,8 +77,8 @@ const PreviousYearPapers=<Link to="/pyq">
 </div>
 </Link>
 
-const CurrentAffairs=       <Link to="/current-affairs">
-<div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+const CurrentAffairs=<Link to="/current-affairs">
+<div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer h-50">
   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
     <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -89,7 +89,7 @@ const CurrentAffairs=       <Link to="/current-affairs">
 </div>
 </Link>
 
-const PracticeTests = <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer relative ">
+const PracticeTests = <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer h-50 relative ">
 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
   <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -102,7 +102,7 @@ const PracticeTests = <div className="bg-card border rounded-lg p-6 text-center 
 
 const Community = (
   <Link to="/community">
-    <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer min-w-80 relative">
+    <div className="bg-card border rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer h-50 min-w-80 relative">
       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
         <Handshake className="w-6 h-6 text-primary" />
       </div>

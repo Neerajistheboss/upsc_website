@@ -51,7 +51,7 @@ function App() {
               <Route path="/students" element={<StudentsPage />} />
             </Routes>
             <Toaster />
-            <div className='hidden md:block absolute bottom-4 left-4 '><PWAInstallButton /></div>
+            <div className='hidden md:block fixed z-50 bottom-4 left-4 '><PWAInstallButton /></div>
           </div>
         </Router>
       </AuthProvider>
