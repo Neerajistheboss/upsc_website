@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+import { toast } from 'sonner'
 
 export interface CurrentAffairsItem {
   id: number
@@ -20,6 +22,7 @@ export const useCurrentAffairs = () => {
   const [currentAffairsData, setCurrentAffairsData] = useState<CurrentAffairsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
   // Fetch all current affairs data
   const fetchCurrentAffairs = async () => {
@@ -37,7 +40,21 @@ export const useCurrentAffairs = () => {
         throw error
       }
 
-      setCurrentAffairsData(data || [])
+      let affairs = data || []
+      // If user is authenticated, fetch bookmarks for this user
+      if (user) {
+        const { data: bookmarks, error: bmError } = await supabase
+          .from('bookmarks')
+          .select('bookmark_id')
+          .eq('user_id', user.id)
+          .eq('type', 'current_affairs')
+        if (bmError) throw bmError
+        const bookmarkedIds = new Set((bookmarks || []).map(b => parseInt(b.bookmark_id)))
+        affairs = affairs.map((item: any) => ({ ...item, bookmarked: bookmarkedIds.has(item.id) }))
+      } else {
+        affairs = affairs.map((item: any) => ({ ...item, bookmarked: false }))
+      }
+      setCurrentAffairsData(affairs)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch current affairs data')
       console.error('Error fetching current affairs data:', err)
@@ -56,9 +73,7 @@ export const useCurrentAffairs = () => {
         .insert([entry])
         .select()
 
-      if (error) {
-        throw error
-      }
+   
 
       // Refresh the data
       await fetchCurrentAffairs()
@@ -66,7 +81,9 @@ export const useCurrentAffairs = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add current affairs entry')
       console.error('Error adding current affairs entry:', err)
-      throw err
+      if (error?.code === '23505') {
+        toast.error('You have already added this current affairs entry')
+      }
     }
   }
 
@@ -122,18 +139,33 @@ export const useCurrentAffairs = () => {
   const toggleBookmark = async (id: number, bookmarked: boolean) => {
     try {
       setError(null)
-      
-      const { error } = await supabase
-        .from('current_affairs')
-        .update({ bookmarked })
-        .eq('id', id)
-
-      if (error) {
-        throw error
+      if (!user) {
+        throw new Error('You must be logged in to bookmark.')
       }
-
-      // Refresh the data
-      await fetchCurrentAffairs()
+      if (bookmarked) {
+        // Add bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            user_id: user.id,
+            bookmark_id: id.toString(),
+            type: 'current_affairs',
+          })
+        if (error) throw error
+      } else {
+        // Remove bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('bookmark_id', id.toString())
+          .eq('type', 'current_affairs')
+        if (error) throw error
+      }
+      // Update local state for immediate feedback
+      setCurrentAffairsData(prev => prev.map(item =>
+        item.id === id ? { ...item, bookmarked } : item
+      ))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle bookmark')
       console.error('Error toggling bookmark:', err)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Species {
   id?: number
@@ -30,6 +31,7 @@ const SpeciesInNewsPage = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [showBookmarked, setShowBookmarked] = useState(false)
   const toast = useToast()
+  const { user } = useAuth()
 
   const iucnStatuses = [
     'Extinct', 'Extinct in the Wild', 'Critically Endangered', 'Endangered', 
@@ -66,11 +68,30 @@ const SpeciesInNewsPage = () => {
   // Toggle bookmark for a species
   const toggleBookmark = async (id: number, current: boolean | undefined) => {
     try {
-      const { error } = await supabase
-        .from('species_in_news')
-        .update({ bookmarked: !current })
-        .eq('id', id)
-      if (error) throw error
+      if (!user) {
+        toast.error('You must be logged in to bookmark.')
+        return
+      }
+      if (!current) {
+        // Add bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            user_id: user.id,
+            bookmark_id: id.toString(),
+            type: 'species',
+          })
+        if (error) throw error
+      } else {
+        // Remove bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('bookmark_id', id.toString())
+          .eq('type', 'species')
+        if (error) throw error
+      }
       setSpecies((prev) => prev.map(s => s.id === id ? { ...s, bookmarked: !current } : s))
       toast.success(!current ? 'Bookmarked!' : 'Bookmark removed')
     } catch (err) {
