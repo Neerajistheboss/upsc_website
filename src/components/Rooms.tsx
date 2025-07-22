@@ -48,6 +48,29 @@ type Message = {
   createdAt: number;
 };
 
+// --- AI Names for replies ---
+const AI_NAMES = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Jamie', 'Avery'];
+const TOTAL_AI_USERS = 5;
+
+function getRandomAIName() {
+  return AI_NAMES[Math.floor(Math.random() * AI_NAMES.length)];
+}
+
+// Helper to distribute N AI users randomly across M rooms (public only)
+function distributeAIUsersToPublicRooms(rooms: Room[], totalAI: number) {
+  const publicRoomIndexes = rooms
+    .map((room, idx) => ({ room, idx }))
+    .filter(({ room }) => !room.password)
+    .map(({ idx }) => idx);
+  const arr = Array(rooms.length).fill(0);
+  if (publicRoomIndexes.length === 0) return arr;
+  for (let i = 0; i < totalAI; i++) {
+    const randIdx = publicRoomIndexes[Math.floor(Math.random() * publicRoomIndexes.length)];
+    arr[randIdx]++;
+  }
+  return arr;
+}
+
 const getOrCreateUserId = () => {
   let id = localStorage.getItem('firebaseUserId');
   if (!id) {
@@ -106,6 +129,9 @@ const Rooms: React.FC = () => {
   const filteredRooms = rooms.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // AI distribution state
+  const [aiDistribution, setAIDistribution] = useState<number[]>([]);
 
   // --- Fetch rooms in realtime ---
   useEffect(() => {
@@ -299,6 +325,38 @@ const Rooms: React.FC = () => {
     }
   };
 
+  // --- Fetch AI reply from OpenAI ---
+  async function fetchAIReply(userMessage: string) {
+    // WARNING: Exposing API keys in frontend is not secure for production!
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'you are a upsc student who is helping other upsc students to prepare for the exam. you have a lot of knowledge about the exam and you are able to help them with their questions. the messages are in hinglish (hindi written using english characters).keep replies short and casual.dont sound like a assitant or robot' },
+            { role: 'user', content: userMessage }
+          ],
+          max_tokens: 100,
+        }),
+      });
+      if (!response.ok) {
+        // If 429 or any error, return empty string (no reply)
+        return '';
+      }
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || '';
+    } catch (err) {
+      // On network or other error, return empty string
+      return '';
+    }
+  }
+
   // --- Send message ---
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -313,7 +371,32 @@ const Rooms: React.FC = () => {
     setMessageText('');
     setTyping(false); // Clear typing state on send
     if (messageInputRef.current) messageInputRef.current.focus();
+
+    // --- AI REPLY LOGIC ---
+    // Only trigger AI reply if the sender is not one of the AI names and the room is public
+    if (!AI_NAMES.includes(displayName) && currentRoom && !currentRoom.password) {
+      const userMsg = messageText.trim();
+      setTimeout(async () => {
+        const aiReply = await fetchAIReply(userMsg);
+        if (!aiReply) return;
+        // Add a random delay between 5 and 10 seconds before sending the AI reply
+        const delayMs = 5000 + Math.floor(Math.random() * 5000); // 5000-10000 ms
+        setTimeout(async () => {
+          const autoReplyRef = push(messagesRef);
+          await set(autoReplyRef, {
+            user: getRandomAIName(),
+            content: aiReply,
+            createdAt: Date.now(),
+          });
+        }, delayMs);
+      }, 1000);
+    }
   };
+
+  // Update AI distribution whenever rooms list changes
+  useEffect(() => {
+    setAIDistribution(distributeAIUsersToPublicRooms(rooms, TOTAL_AI_USERS));
+  }, [rooms.length]);
 
   return (
     <div className="flex-1 w-full flex flex-col ">
@@ -322,7 +405,7 @@ const Rooms: React.FC = () => {
         <span className="ml-4 text-base font-normal text-muted-foreground">
           Total online: 
           <span className="inline-block w-2 h-2 rounded-full bg-green-500 mx-2 align-middle"></span>
-          {totalOnline}
+          {totalOnline + aiDistribution.reduce((a, b) => a + b, 0)}
         </span>
       </h2>
       <div className="grid md:grid-cols-3 gap-8 w-full flex-1">
@@ -388,7 +471,7 @@ const Rooms: React.FC = () => {
               <div className="text-muted-foreground">No rooms yet. Create one!</div>
             ) : (
               <ul className="space-y-2">
-                {(rooms.length > 10 ? filteredRooms : rooms).map(room => (
+                {(rooms.length > 10 ? filteredRooms : rooms).map((room, idx) => (
                   <li key={room.id}>
                     <div
                        onClick={() => handleJoinRoom(room)} className={`hover:cursor-pointer border flex justify-start gap-4 w-full text-left px-3 py-2 rounded-md transition-colors ${currentRoom?.id === room.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted/50'}`}
@@ -403,9 +486,18 @@ const Rooms: React.FC = () => {
                               <span className="inline-block w-2 h-2 rounded-full bg-green-500  align-middle"></span>
                             )}
                             <span className="ml-2 text-xs text-muted-foreground">
-                              {onlineCounts[room.id] || 0} online
+                              {(() => {
+                                const aiCount = room.password ? 0 : (aiDistribution[idx] || 0);
+                                const total = (onlineCounts[room.id] || 0) + aiCount;
+                                return <>
+                                  {total > 0 && (
+                                    <span className="inline-block w-2 h-2 rounded-full bg-green-500 align-middle mr-1"></span>
+                                  )}
+                                  {total} online
+                                </>;
+                              })()}
+                              {room.password && <span className="ml-2 text-xs text-yellow-600">🔒</span>}
                             </span>
-                            {room.password && <span className="ml-2 text-xs text-yellow-600">🔒</span>}
                           </div>
                         </div>
                       </div>

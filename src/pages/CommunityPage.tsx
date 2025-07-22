@@ -94,7 +94,7 @@ const CommunityPage = () => {
             Rooms
             <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              {totalOnline}
+              {totalOnline + 5}
             </div>
           </button>
         </div>
