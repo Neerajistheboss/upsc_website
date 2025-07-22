@@ -18,6 +18,25 @@ export interface CurrentAffairsItem {
   updated_at: string
 }
 
+export interface SpeciesInNewsItem {
+  id: number
+  name: string
+  scientific_name: string
+  common_name: string
+  iucn_status: string
+  cites_status: string
+  wpa_status: string
+  habitat: string
+  distribution: string
+  threats: string[]
+  conservation_efforts: string[]
+  recent_news: string
+  image_url?: string
+  bookmarked: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 export const useCurrentAffairs = () => {
   const [currentAffairsData, setCurrentAffairsData] = useState<CurrentAffairsItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,39 +45,52 @@ export const useCurrentAffairs = () => {
 
   // Fetch all current affairs data
   const fetchCurrentAffairs = async () => {
+    console.log('fetching current affairs 1')
     try {
       setLoading(true)
       setError(null)
       
+      console.log('fetching current affairs 2')
       const { data, error } = await supabase
-        .from('current_affairs')
-        .select('*')
+      .from('current_affairs')
+      .select('*')
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
-
-      if (error) {
-        throw error
-      }
-
-      let affairs = data || []
-      // If user is authenticated, fetch bookmarks for this user
-      if (user) {
-        const { data: bookmarks, error: bmError } = await supabase
+        console.log('fetching current affairs 3')
+        
+        if (error) {
+          throw error
+        }
+        console.log('fetching current affairs 4')
+        
+        let affairs = data || []
+        // If user is authenticated, fetch bookmarks for this user
+        if (user) {
+          console.log('fetching current affairs 5')
+          const { data: bookmarks, error: bmError } = await supabase
           .from('bookmarks')
           .select('bookmark_id')
           .eq('user_id', user.id)
           .eq('type', 'current_affairs')
-        if (bmError) throw bmError
+          console.log('fetching current affairs 6 ')
+          if (bmError) throw bmError
+          console.log('fetching current affairs 7')
         const bookmarkedIds = new Set((bookmarks || []).map(b => parseInt(b.bookmark_id)))
+        console.log('bookmarkedIds',bookmarkedIds)
+        console.log('fetching current affairs 8')
         affairs = affairs.map((item: any) => ({ ...item, bookmarked: bookmarkedIds.has(item.id) }))
       } else {
         affairs = affairs.map((item: any) => ({ ...item, bookmarked: false }))
       }
+      console.log('fetching current affairs 9')
       setCurrentAffairsData(affairs)
+      console.log('fetching current affairs 10')
     } catch (err) {
+      console.log('fetching current affairs 11')
       setError(err instanceof Error ? err.message : 'Failed to fetch current affairs data')
       console.error('Error fetching current affairs data:', err)
     } finally {
+      console.log('fetching current affairs 12')
       setLoading(false)
     }
   }
@@ -138,9 +170,9 @@ export const useCurrentAffairs = () => {
   // Toggle bookmark status
   const toggleBookmark = async (id: number, bookmarked: boolean) => {
     try {
-      setError(null)
       if (!user) {
-        throw new Error('You must be logged in to bookmark.')
+        toast.error('You need to login to bookmark.')
+        return
       }
       if (bookmarked) {
         // Add bookmark
@@ -160,7 +192,7 @@ export const useCurrentAffairs = () => {
           .eq('user_id', user.id)
           .eq('bookmark_id', id.toString())
           .eq('type', 'current_affairs')
-        if (error) throw error
+        if (error) {console.log(error)}
       }
       // Update local state for immediate feedback
       setCurrentAffairsData(prev => prev.map(item =>
@@ -196,7 +228,7 @@ export const useCurrentAffairs = () => {
   // Initialize data on mount
   useEffect(() => {
     fetchCurrentAffairs()
-  }, [])
+  }, [user?.id])
 
   return {
     currentAffairsData,

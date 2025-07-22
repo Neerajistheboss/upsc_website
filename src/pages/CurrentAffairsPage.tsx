@@ -1,16 +1,19 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentAffairs } from '@/hooks/useCurrentAffairs'
 import { useToast } from '@/hooks/useToast'
 import type { CurrentAffairsItem } from '@/hooks/useCurrentAffairs'
+import { useAuth } from '@/contexts/AuthContext'
 
 const CurrentAffairsPage = () => {
-  const { currentAffairsData, loading, error, toggleBookmark } = useCurrentAffairs()
+  const { currentAffairsData, loading, error, toggleBookmark,fetchCurrentAffairs } = useCurrentAffairs()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedImportance, setSelectedImportance] = useState('')
   const [showBookmarked, setShowBookmarked] = useState(false)
   const toast = useToast()
+  const { user } = useAuth()
+
 
   const categories = [
     'All Categories',
@@ -101,6 +104,11 @@ const CurrentAffairsPage = () => {
 
   const handleSave = async (affair: CurrentAffairsItem) => {
     try {
+      if (!user) {
+        toast.error('You need to login to bookmark.')
+        return
+      }
+      console.log('adding bookmark')
       await toggleBookmark(affair.id, !affair.bookmarked)
       toast.success(
         affair.bookmarked ? 'Removed from bookmarks' : 'Added to bookmarks',

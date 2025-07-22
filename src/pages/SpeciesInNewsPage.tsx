@@ -1,37 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/hooks/useToast'
-import { useAuth } from '@/contexts/AuthContext'
-
-interface Species {
-  id?: number
-  name: string
-  scientific_name: string
-  common_name: string
-  iucn_status: 'Extinct' | 'Extinct in the Wild' | 'Critically Endangered' | 'Endangered' | 'Vulnerable' | 'Near Threatened' | 'Least Concern' | 'Data Deficient' | 'Not Evaluated'
-  cites_status: 'Appendix I' | 'Appendix II' | 'Appendix III' | 'Not Listed'
-  wpa_status: 'Schedule I' | 'Schedule II' | 'Schedule III' | 'Schedule IV' | 'Schedule V' | 'Schedule VI' | 'Not Listed'
-  habitat: string
-  distribution: string
-  threats: string[]
-  conservation_efforts: string[]
-  recent_news: string
-  image_url?: string
-  bookmarked?: boolean
-  created_at?: string
-  updated_at?: string
-}
+import React, { useState } from 'react'
+import { useSpeciesInNews } from '@/hooks/useSpeciesInNews'
 
 const SpeciesInNewsPage = () => {
-  const [species, setSpecies] = useState<Species[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { speciesData, loading, error, toggleBookmark } = useSpeciesInNews()
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [showBookmarked, setShowBookmarked] = useState(false)
-  const toast = useToast()
-  const { user } = useAuth()
 
   const iucnStatuses = [
     'Extinct', 'Extinct in the Wild', 'Critically Endangered', 'Endangered', 
@@ -41,66 +16,8 @@ const SpeciesInNewsPage = () => {
   const citesStatuses = ['Appendix I', 'Appendix II', 'Appendix III', 'Not Listed']
   const wpaStatuses = ['Schedule I', 'Schedule II', 'Schedule III', 'Schedule IV', 'Schedule V', 'Schedule VI', 'Not Listed']
 
-  // Fetch all species data
-  const fetchSpecies = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const { data, error } = await supabase
-        .from('species_in_news')
-        .select('*')
-        .order('name', { ascending: true })
-
-      if (error) {
-        throw error
-      }
-
-      setSpecies(data || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch species data')
-      console.error('Error fetching species data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Toggle bookmark for a species
-  const toggleBookmark = async (id: number, current: boolean | undefined) => {
-    try {
-      if (!user) {
-        toast.error('You must be logged in to bookmark.')
-        return
-      }
-      if (!current) {
-        // Add bookmark
-        const { error } = await supabase
-          .from('bookmarks')
-          .insert({
-            user_id: user.id,
-            bookmark_id: id.toString(),
-            type: 'species',
-          })
-        if (error) throw error
-      } else {
-        // Remove bookmark
-        const { error } = await supabase
-          .from('bookmarks')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('bookmark_id', id.toString())
-          .eq('type', 'species')
-        if (error) throw error
-      }
-      setSpecies((prev) => prev.map(s => s.id === id ? { ...s, bookmarked: !current } : s))
-      toast.success(!current ? 'Bookmarked!' : 'Bookmark removed')
-    } catch (err) {
-      toast.error('Failed to update bookmark')
-    }
-  }
-
   // Filter species based on search term, status, and bookmark toggle
-  const filteredSpecies = species.filter(specie => {
+  const filteredSpecies = speciesData.filter(specie => {
     if (showBookmarked && !specie.bookmarked) return false
     const matchesSearch = specie.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          specie.scientific_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,11 +79,6 @@ const SpeciesInNewsPage = () => {
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
-
-  // Initialize data on mount
-  useEffect(() => {
-    fetchSpecies()
-  }, [])
 
   if (loading) {
     return (
