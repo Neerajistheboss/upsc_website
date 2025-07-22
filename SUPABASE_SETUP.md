@@ -83,4 +83,32 @@ Once set up, you can:
 - Make sure your environment variables are correctly set
 - Check that the Supabase table exists and has the correct schema
 - Verify that RLS policies are configured correctly
-- Check the browser console for any CORS or authentication errors 
+- Check the browser console for any CORS or authentication errors
+
+## Daily Targets Table
+
+Create a table called `daily_targets` to store each user's daily targets and their status.
+
+**Columns:**
+- id (bigint, primary key, auto-increment)
+- user_id (uuid, foreign key to users)
+- date (date)
+- target (text)
+- status (text, e.g., 'pending', 'achieved', 'failed')
+- productivity_rating (integer, nullable, 1-5)
+- created_at (timestamp, default now())
+- updated_at (timestamp, default now())
+
+**Example SQL:**
+```sql
+create table daily_targets (
+  id bigint generated always as identity primary key,
+  user_id uuid references auth.users not null,
+  date date not null,
+  target text not null,
+  status text default 'pending',
+  productivity_rating integer,
+  created_at timestamp with time zone default timezone('utc', now()),
+  updated_at timestamp with time zone default timezone('utc', now())
+);
+``` 

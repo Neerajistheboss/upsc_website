@@ -23,6 +23,7 @@ import { ThemeProvider } from '@/components/ui/theme-provider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import PWAInstallButton from '@/components/PWAInstallButton'
 import AdminRoute from '@/components/AdminRoute'
+import DailyTargetPage from '@/pages/DailyTargetPage'
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route path="/students" element={<StudentsPage />} />
+              <Route path="/daily-targets" element={<DailyTargetPage />} />
             </Routes>
             <Toaster />
             <div className='hidden md:block fixed z-50 bottom-4 left-4 '><PWAInstallButton /></div>
